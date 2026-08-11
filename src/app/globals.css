@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   DESIGN TOKENS — [BRAND NAME]
+   Tutta l'identità visiva passa da qui. Cambiare la palette del brand
+   significa cambiare questo blocco, non i componenti.
+   ========================================================================= */
+
+@theme {
+  /* --- Superfici -------------------------------------------------------- */
+  --color-panna: #fdfbf6; /* sfondo pagina */
+  --color-crema: #f4eada; /* card, sezioni alternate */
+  --color-crema-deep: #e8d9be; /* bordi, hover su crema */
+
+  /* --- Inchiostro ------------------------------------------------------- */
+  --color-cacao: #241812; /* testo principale, sfondi scuri */
+  --color-cacao-soft: #6b5445; /* testo secondario — 6.4:1 su panna */
+  --color-cacao-line: #d9c9b0; /* bordi sottili */
+
+  /* --- Accent del brand -------------------------------------------------
+     `fiamma` su `cacao` = 5.15:1 → i bottoni primari sono fondo fiamma con
+     testo cacao. È una scelta voluta: più food e più leggibile del bianco.
+     `fiamma-deep` serve dove serve testo bianco (4.8:1). */
+  --color-fiamma: #ff4b26;
+  --color-fiamma-deep: #d6350f;
+  --color-fiamma-wash: #ffe8e1;
+
+  /* --- Gusti ------------------------------------------------------------
+     Ogni gusto ha fondo / inchiostro / accent. Un nuovo gusto aggiunge una
+     terna qui e una riga nel database: i componenti non cambiano. */
+  --color-life: #e23d2e; /* CHOCO CHIP  ♥ */
+  --color-life-wash: #fbe3df;
+  --color-energy: #f5c518; /* DOUBLE CHOC ⚡ */
+  --color-energy-wash: #fdf3d4;
+  --color-potion: #c98a3f; /* PEANUT CHOC 🧪 */
+  --color-potion-wash: #f7ead6;
+
+  /* --- Stati ------------------------------------------------------------ */
+  --color-success: #1f7a4d;
+  --color-warning: #b26a00;
+  --color-danger: #c02617;
+
+  /* --- Tipografia ------------------------------------------------------- */
+  --font-display: var(--font-display-family), "Georgia", serif;
+  --font-sans: var(--font-sans-family), system-ui, sans-serif;
+
+  /* Scala fluida: una sola scala per mobile e desktop, niente breakpoint
+     tipografici da mantenere. */
+  /* Il tetto è 5.5rem, non di più: con quattro righe di titolo una scala più
+     grande spinge le CTA sotto la piega su un desktop da 900px di altezza. */
+  --text-hero: clamp(2.5rem, 1rem + 5.4vw, 5.5rem);
+  --text-hero--line-height: 0.94;
+  --text-hero--letter-spacing: -0.035em;
+
+  --text-display: clamp(2rem, 1rem + 4.2vw, 4rem);
+  --text-display--line-height: 0.98;
+  --text-display--letter-spacing: -0.03em;
+
+  --text-title: clamp(1.5rem, 1.1rem + 1.8vw, 2.25rem);
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.02em;
+
+  --text-lead: clamp(1.0625rem, 0.98rem + 0.45vw, 1.3125rem);
+  --text-lead--line-height: 1.5;
+
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1;
+  --text-eyebrow--letter-spacing: 0.14em;
+
+  /* --- Forma ------------------------------------------------------------ */
+  --radius-card: 1.5rem;
+  --radius-pill: 999px;
+
+  /* Ombre calde: mai grigie, sempre nella famiglia del cacao. */
+  --shadow-soft: 0 2px 8px -2px rgb(36 24 18 / 0.08);
+  --shadow-lift: 0 18px 40px -18px rgb(36 24 18 / 0.28);
+
+  /* --- Motion ----------------------------------------------------------- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* =========================================================================
+   BASE
+   ========================================================================= */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-cacao-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-panna);
+    color: var(--color-cacao);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Focus ring unico e sempre visibile, nel colore del brand. */
+  :focus-visible {
+    outline: 3px solid var(--color-fiamma);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-fiamma);
+    color: var(--color-cacao);
+  }
+
+  /* Chi ha chiesto meno movimento non deve subirne. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* =========================================================================
+   UTILITY DEL BRAND
+   ========================================================================= */
+
+@layer utilities {
+  /* Occhiello: la piccola etichetta maiuscola sopra i titoli. */
+  .eyebrow {
+    font-size: var(--text-eyebrow);
+    letter-spacing: var(--text-eyebrow--letter-spacing);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  /* Grana leggera sulle superfici crema: evita il "piatto da template". */
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Larghezza di lettura confortevole per il magazine. */
+  .measure {
+    max-width: 68ch;
+  }
+
+  /* Rivelazione allo scroll — attivata da <Reveal />. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.7s var(--ease-out-soft),
+      transform 0.7s var(--ease-out-soft);
+  }
+
+  .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

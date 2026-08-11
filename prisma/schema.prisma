@@ -1,0 +1,539 @@
+// =============================================================================
+// [BRAND NAME] — schema del database
+//
+// Due principi guidano questo schema:
+//
+//  1. Niente dato di prodotto scritto nel codice. Valori nutrizionali,
+//     ingredienti, allergeni e FAQ vivono qui, ognuno con `isConfirmed`.
+//     Finché il flag è false il sito stampa "DA CONFERMARE" e non c'è modo
+//     di pubblicare per sbaglio un claim non validato.
+//
+//  2. Il catalogo cresce senza toccare il codice. I bundle sono varianti,
+//     i gusti sono righe, le forme sono una chiave: un nuovo gusto, una
+//     barretta o una limited edition si aggiungono dall'admin.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Persone -----------------------------------------------------------------
+
+enum AdminRole {
+  ADMIN
+  EDITOR
+}
+
+/// Chi entra in /admin. È anche l'autore degli articoli del magazine.
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(EDITOR)
+  bio          String?
+  avatarUrl    String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  posts Post[]
+}
+
+model Customer {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  firstName        String?
+  lastName         String?
+  phone            String?
+  marketingConsent Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([createdAt])
+}
+
+// --- Catalogo ----------------------------------------------------------------
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  subtitle    String?
+  description String
+  status      ProductStatus @default(DRAFT)
+  /// Quanti biscotti contiene una confezione. 15 al lancio.
+  unitsPerBox Int           @default(15)
+  /// Grammatura del singolo biscotto, in grammi. Da confermare a ricetta chiusa.
+  unitWeightG Int?
+  sortOrder   Int           @default(0)
+
+  seoTitle        String?
+  metaDescription String?
+  ogImageUrl      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants   ProductVariant[]
+  images     ProductImage[]
+  flavors    Flavor[]         @relation("ProductFlavors")
+  nutrition  NutritionFact[]
+  ingredients Ingredient[]
+  allergens  Allergen[]
+  reviews    Review[]
+
+  @@index([status, sortOrder])
+}
+
+/// I bundle SONO varianti: 1 box, 3 box, 6 box. Aggiungere un 12 box è una
+/// riga inserita dall'admin, non una modifica al codice.
+model ProductVariant {
+  id             String  @id @default(cuid())
+  productId      String
+  name           String
+  /// Numero di confezioni incluse. Determina il prezzo unitario mostrato.
+  boxCount       Int     @default(1)
+  sku            String  @unique
+  priceCents     Int
+  /// Prezzo barrato, per mostrare il risparmio del bundle. Null = nessuno sconto.
+  compareAtCents Int?
+  stock          Int     @default(0)
+  isDefault      Boolean @default(false)
+  /// Etichetta promozionale, es. "Il più scelto". Null = nessun badge.
+  badge          String?
+  sortOrder      Int     @default(0)
+  isActive       Boolean @default(true)
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId, sortOrder])
+}
+
+enum ImageKind {
+  HERO
+  MACRO
+  PACK
+  LIFESTYLE
+  SOCIAL
+}
+
+model ProductImage {
+  id        String    @id @default(cuid())
+  productId String
+  url       String
+  /// Obbligatorio a livello di validazione: nessuna immagine entra senza alt.
+  alt       String
+  kind      ImageKind @default(PACK)
+  width     Int?
+  height    Int?
+  sortOrder Int       @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+}
+
+/// Un gusto = un colore + una forma power-up. Nuovi gusti senza toccare i componenti.
+model Flavor {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  /// "life" | "energy" | "potion" — vedi COOKIE_SHAPES in config/brand.ts
+  shapeKey    String
+  shapeLabel  String
+  description String
+  colorHex    String
+  washHex     String
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  products Product[] @relation("ProductFlavors")
+
+  @@index([sortOrder])
+}
+
+// --- Dati soggetti a conferma ------------------------------------------------
+// Tutti e quattro i modelli qui sotto portano `isConfirmed`. Il frontend
+// mostra il badge "DA CONFERMARE" finché è false.
+
+model NutritionFact {
+  id          String  @id @default(cuid())
+  productId   String
+  /// Chiave stabile, es. "protein", "energy_kcal", "fibre".
+  key         String
+  label       String
+  value       String
+  unit        String?
+  /// Per porzione o per 100 g — testo libero perché cambia col formato.
+  basis       String  @default("per 100 g")
+  isHighlight Boolean @default(false)
+  isConfirmed Boolean @default(false)
+  sortOrder   Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, key])
+  @@index([productId, sortOrder])
+}
+
+model Ingredient {
+  id          String  @id @default(cuid())
+  productId   String
+  name        String
+  note        String?
+  isConfirmed Boolean @default(false)
+  sortOrder   Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+}
+
+model Allergen {
+  id          String  @id @default(cuid())
+  productId   String
+  label       String
+  /// true = contiene, false = può contenere tracce.
+  isPresent   Boolean @default(true)
+  isConfirmed Boolean @default(false)
+  sortOrder   Int     @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+}
+
+model FaqItem {
+  id          String  @id @default(cuid())
+  question    String
+  answer      String
+  /// Raggruppa le FAQ per contesto: "prodotto", "spedizioni", "ordini".
+  group       String  @default("prodotto")
+  isConfirmed Boolean @default(false)
+  isPublished Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([group, sortOrder])
+}
+
+// --- Recensioni --------------------------------------------------------------
+
+model Review {
+  id          String   @id @default(cuid())
+  productId   String
+  authorName  String
+  rating      Int
+  title       String?
+  body        String
+  isPublished Boolean  @default(false)
+  /// I dati di esempio sono marcati così: l'admin li vede etichettati e li
+  /// elimina in blocco. Non finiscono mai nell'AggregateRating strutturato.
+  isDemo      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, isPublished])
+}
+
+// --- Carrello e ordini -------------------------------------------------------
+
+/// Il carrello vive nel database, agganciato a un cookie httpOnly.
+/// Sopravvive al refresh e non dipende da localStorage.
+model Cart {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  couponCode String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  items CartItem[]
+
+  @@index([updatedAt])
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  variantId String
+  quantity  Int    @default(1)
+
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, variantId])
+}
+
+enum CouponType {
+  PERCENT
+  FIXED
+  FREE_SHIPPING
+}
+
+model Coupon {
+  id               String     @id @default(cuid())
+  code             String     @unique
+  type             CouponType
+  /// Percentuale (1-100) per PERCENT, centesimi per FIXED, ignorato per FREE_SHIPPING.
+  value            Int        @default(0)
+  minSubtotalCents Int        @default(0)
+  usageLimit       Int?
+  usedCount        Int        @default(0)
+  startsAt         DateTime?
+  expiresAt        DateTime?
+  isActive         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+}
+
+model ShippingRate {
+  id            String  @id @default(cuid())
+  name          String
+  description   String?
+  priceCents    Int
+  /// Soglia oltre la quale la spedizione è gratuita. Null = mai gratuita.
+  freeOverCents Int?
+  estimateDays  String?
+  isActive      Boolean @default(true)
+  sortOrder     Int     @default(0)
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id         String @id @default(cuid())
+  /// Numero leggibile mostrato al cliente, es. SG-2026-0001.
+  number     String @unique
+  customerId String?
+  email      String
+
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  /// "manual" finché Stripe non è configurato, poi "stripe".
+  paymentProvider String      @default("manual")
+  /// Id della sessione o del payment intent del provider.
+  paymentRef      String?
+
+  subtotalCents Int
+  discountCents Int @default(0)
+  shippingCents Int @default(0)
+  taxCents      Int @default(0)
+  totalCents    Int
+
+  couponCode   String?
+  shippingName String
+  shippingLine1 String
+  shippingLine2 String?
+  shippingCity String
+  shippingZip  String
+  shippingState String?
+  shippingCountry String @default("IT")
+  shippingPhone String?
+
+  customerNote String?
+  adminNote    String?
+  trackingCode String?
+
+  /// Gli ordini di esempio sono marcati: la dashboard li filtra con un interruttore.
+  isDemo Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  variantId String?
+
+  /// Snapshot al momento dell'acquisto: cambiare il listino non riscrive
+  /// la storia degli ordini già fatti.
+  nameSnapshot    String
+  variantSnapshot String
+  skuSnapshot     String
+  unitPriceCents  Int
+  quantity        Int
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+// --- Magazine ----------------------------------------------------------------
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+}
+
+model Category {
+  id              String  @id @default(cuid())
+  slug            String  @unique
+  name            String
+  description     String?
+  colorHex        String  @default("#FF4B26")
+  seoTitle        String?
+  metaDescription String?
+  sortOrder       Int     @default(0)
+
+  posts Post[]
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  slug  String @unique
+  name  String
+  posts Post[] @relation("PostTags")
+}
+
+model Post {
+  id      String     @id @default(cuid())
+  slug    String     @unique
+  title   String
+  excerpt String
+  status  PostStatus @default(DRAFT)
+
+  /// Documento TipTap. È la fonte di verità: interrogabile per l'analisi SEO.
+  contentJson Json
+  /// HTML sanificato, generato al salvataggio. Serve al rendering server-side.
+  contentHtml String @default("")
+
+  publishedAt  DateTime?
+  scheduledFor DateTime?
+
+  authorId   String?
+  categoryId String?
+
+  featuredImageId  String?
+  featuredImageAlt String?
+
+  // Campi SEO
+  focusKeyword    String?
+  seoTitle        String?
+  metaDescription String?
+  canonicalUrl    String?
+  ogTitle         String?
+  ogDescription   String?
+  ogImageUrl      String?
+
+  wordCount      Int @default(0)
+  readingMinutes Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author        AdminUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  category      Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  featuredImage Media?     @relation(fields: [featuredImageId], references: [id], onDelete: SetNull)
+  tags          Tag[]      @relation("PostTags")
+
+  @@index([status, publishedAt])
+  @@index([categoryId, publishedAt])
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  alt       String   @default("")
+  mimeType  String
+  sizeBytes Int      @default(0)
+  width     Int?
+  height    Int?
+  folder    String   @default("generale")
+  createdAt DateTime @default(now())
+
+  posts Post[]
+
+  @@index([folder, createdAt])
+}
+
+// --- Contenuti e sistema -----------------------------------------------------
+
+/// Copy modificabile dalla redazione: announcement bar, headline hero,
+/// benefit card, testi delle sezioni. Chiave stabile + valore JSON.
+model SiteSetting {
+  key       String   @id
+  valueJson Json
+  label     String
+  group     String   @default("generale")
+  updatedAt DateTime @updatedAt
+}
+
+model LegalPage {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  title            String
+  bodyHtml         String
+  /// true finché un legale non ha validato il testo. Mostra un banner in pagina.
+  needsLegalReview Boolean  @default(true)
+  updatedAt        DateTime @updatedAt
+}
+
+enum SubscriberStatus {
+  PENDING
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
+model NewsletterSubscriber {
+  id        String           @id @default(cuid())
+  email     String           @unique
+  name      String?
+  source    String           @default("footer")
+  status    SubscriberStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+}
+
+/// Analytics di prima parte, senza cookie. Alimenta il KPI "traffico magazine"
+/// della dashboard con numeri reali invece che inventati.
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  referrer  String?
+  createdAt DateTime @default(now())
+
+  @@index([path, createdAt])
+  @@index([createdAt])
+}
