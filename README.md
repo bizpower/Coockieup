@@ -1,12 +1,12 @@
-# [BRAND NAME] — e-commerce
+# CookieUp — e-commerce
 
 E-commerce per un brand italiano di mini cookie proteici. Next.js, TypeScript,
 PostgreSQL. Frontend pubblico, area amministrativa, magazine editoriale.
 
-Il nome del brand, la ricetta e i valori nutrizionali **non sono definitivi**.
-Il progetto è costruito perché cambiarli sia un'operazione da minuti, non da
-giorni: vedi [Cambiare il nome del brand](#cambiare-il-nome-del-brand) e
-[Dati non confermati](#dati-non-confermati).
+La ricetta e i valori nutrizionali **non sono definitivi**, e il sito lo
+dichiara invece di nasconderlo: vedi [Dati non confermati](#dati-non-confermati).
+Anche il nome resta un'operazione da minuti, se dovesse cambiare ancora — vedi
+[Il marchio, e come cambiarlo](#il-marchio-e-come-cambiarlo).
 
 ---
 
@@ -101,7 +101,7 @@ docker run --name brand-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=brand \
 |---|---|
 | `npm run demo` | Database in Docker, schema, contenuti e sito, in un colpo solo |
 | `npm run dev` | Sviluppo |
-| `npm run build` | Genera il client Prisma e compila |
+| `npm run build` | Client Prisma, migrazioni e compilazione |
 | `npm run typecheck` | TypeScript senza emettere |
 | `npm run lint` | eslint, preset di Next |
 | `npm run verifica` | Dice cosa manca perché il sito parta |
@@ -160,15 +160,44 @@ specifico di una piattaforma.
 
 ### Su Vercel
 
-1. Importa il repository.
-2. Collega un database (Vercel Postgres, Neon, Supabase) e copia la stringa in `DATABASE_URL`.
-3. Imposta le variabili d'ambiente del file `.env.example` che ti servono.
-   `NEXT_PUBLIC_SITE_URL` deve essere il dominio reale, senza barra finale.
-4. Genera `AUTH_SECRET` con `openssl rand -base64 32`.
-5. Al primo deploy applica lo schema e popola:
-   `npx prisma migrate deploy && npm run db:seed`
-6. Configura il webhook Stripe sull'URL definitivo.
-7. Quando è tutto pronto, `NEXT_PUBLIC_ALLOW_INDEXING="true"`.
+**1. Il database, prima di tutto.** Vercel non ne dà uno: va collegato.
+Storage → Create Database, oppure un Neon o un Supabase esterno. Quello che
+serve è la stringa di connessione.
+
+**2. Le variabili d'ambiente** (Settings → Environment Variables). Tre sono
+obbligatorie, senza una sola di queste il sito non parte:
+
+| Variabile | Valore |
+|---|---|
+| `DATABASE_URL` | la stringa del punto 1 |
+| `NEXT_PUBLIC_SITE_URL` | il dominio reale, senza barra finale |
+| `AUTH_SECRET` | generala con `openssl rand -base64 32` |
+
+Le altre (Stripe, email, cron, analytics) stanno in `.env.example` e si possono
+aggiungere dopo: senza, il sito funziona e lo dichiara.
+
+**3. Il deploy.** Lo schema del database viene applicato dal comando di build,
+quindi non c'è niente da lanciare a mano. Se `DATABASE_URL` manca o è
+sbagliata, il build **fallisce dicendolo** invece di pubblicare un sito che
+mostra un errore su ogni pagina.
+
+**4. I contenuti.** Il database è vuoto: il sito si apre ma non ha catalogo. Dal
+tuo computer, una volta sola:
+
+```bash
+DATABASE_URL="...la stringa di produzione..." npm run db:seed
+```
+
+Popola prodotto, varianti, testi, FAQ, pagine legali, articoli e crea il primo
+utente amministratore da `ADMIN_EMAIL` / `ADMIN_PASSWORD`. È idempotente: se lo
+rilanci non duplica niente.
+
+**5. Poi, quando servono:** il webhook Stripe sull'URL definitivo, `CRON_SECRET`
+per la manutenzione notturna e — solo al lancio vero —
+`NEXT_PUBLIC_ALLOW_INDEXING="true"`.
+
+Se qualcosa non torna, `npm run verifica` con la `DATABASE_URL` di produzione
+dice quale dei punti qui sopra manca.
 
 ### Una cosa da sistemare prima del traffico vero
 
