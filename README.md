@@ -54,8 +54,22 @@ la parte con Docker e fa tutto il resto.
 Il pagamento non è collegato: gli ordini si registrano come da saldare, così il
 percorso d'acquisto si può provare fino in fondo senza conto Stripe.
 
-Se una pagina mostra «Ci siamo rotti noi», in sviluppo il riquadro in fondo
-dice la causa e cosa fare — quasi sempre è il database spento.
+### Se una pagina mostra «Ci siamo rotti noi»
+
+Quella schermata non dice mai il motivo — è pensata per un cliente, non per
+chi installa. Per sapere cosa manca:
+
+```bash
+npm run verifica
+```
+
+Controlla variabili d'ambiente, raggiungibilità del database, schema applicato,
+contenuti e utente amministratore, e per ogni cosa che non va stampa il comando
+che la risolve. Funziona anche in produzione: lanciato sull'hosting legge le
+variabili della piattaforma. Non modifica niente.
+
+In sviluppo la pagina d'errore mostra anche un riquadro con la causa. In nove
+casi su dieci è il database spento o `DATABASE_URL` sbagliata.
 
 ---
 
@@ -90,6 +104,7 @@ docker run --name brand-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=brand \
 | `npm run build` | Genera il client Prisma e compila |
 | `npm run typecheck` | TypeScript senza emettere |
 | `npm run lint` | eslint, preset di Next |
+| `npm run verifica` | Dice cosa manca perché il sito parta |
 | `npm run db:migrate` | Crea e applica una migrazione |
 | `npm run db:seed` | Popola il database (idempotente) |
 | `npm run db:studio` | Esplora i dati in una UI |

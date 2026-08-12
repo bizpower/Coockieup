@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "demo": "node scripts/demo.mjs",
+    "verifica": "node scripts/verifica.mjs",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",

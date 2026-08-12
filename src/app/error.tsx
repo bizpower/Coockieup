@@ -22,11 +22,14 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 const IN_SVILUPPO = process.env.NODE_ENV === "development";
 
 /** Il messaggio grezzo, tradotto in una causa e un rimedio quando si riconosce. */
-function diagnosi(messaggio: string): { causa: string; rimedio: string } | null {
+function diagnosi(
+  messaggio: string,
+): { causa: string; rimedio: string } | null {
   if (/can't reach database server|econnrefused|P1001/i.test(messaggio)) {
     return {
       causa: "Il database non risponde.",
-      rimedio: "Riavvialo con `npm run demo`, o controlla DATABASE_URL nel file .env.",
+      rimedio:
+        "Riavvialo con `npm run demo`, o controlla DATABASE_URL nel file .env.",
     };
   }
   if (/does not exist in the current database|P2021|P2022/i.test(messaggio)) {
@@ -61,7 +64,8 @@ export default function GlobalError({
         <p className="eyebrow text-fiamma">Qualcosa è andato storto</p>
         <h1 className="text-display mt-4">Ci siamo rotti noi, non tu.</h1>
         <p className="text-lead text-cacao-soft mt-5">
-          È successo un errore imprevisto. Riprova: nella maggior parte dei casi basta.
+          È successo un errore imprevisto. Riprova: nella maggior parte dei casi
+          basta.
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -76,11 +80,15 @@ export default function GlobalError({
         {error.digest && (
           <p className="text-cacao-soft mt-8 text-xs">
             Se scrivi all&apos;assistenza, riporta questo codice:{" "}
-            <code className="bg-crema rounded px-1.5 py-0.5 font-mono">{error.digest}</code>
+            <code className="bg-crema rounded px-1.5 py-0.5 font-mono">
+              {error.digest}
+            </code>
           </p>
         )}
 
-        {IN_SVILUPPO && error.message && <DettaglioSviluppo messaggio={error.message} />}
+        {IN_SVILUPPO && error.message && (
+          <DettaglioSviluppo messaggio={error.message} />
+        )}
       </div>
     </div>
   );
@@ -98,9 +106,14 @@ function DettaglioSviluppo({ messaggio }: { messaggio: string }) {
         </>
       ) : (
         <p className="text-cacao mt-3 font-semibold">
-          Errore non riconosciuto: il messaggio completo è qui sotto e nel terminale.
+          Errore non riconosciuto: il messaggio completo è qui sotto e nel
+          terminale.
         </p>
       )}
+      <p className="text-cacao-soft mt-3 text-sm">
+        Per un controllo completo:{" "}
+        <code className="bg-panna rounded px-1.5 py-0.5">npm run verifica</code>
+      </p>
       {/* I messaggi di Prisma contengono percorsi lunghissimi senza spazi:
           senza break-all escono dal riquadro invece di andare a capo. */}
       <pre className="text-cacao-soft mt-4 max-h-40 overflow-auto font-mono text-xs break-all whitespace-pre-wrap">

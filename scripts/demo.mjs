@@ -20,7 +20,8 @@ import { randomBytes } from "node:crypto";
 
 const CONTAINER = "cookieup-demo-db";
 // Porta 5433 e non 5432: se hai già un PostgreSQL tuo, la demo non gli va addosso.
-const DEMO_DB_URL = "postgresql://postgres:demo@127.0.0.1:5433/cookieup?schema=public";
+const DEMO_DB_URL =
+  "postgresql://postgres:demo@127.0.0.1:5433/cookieup?schema=public";
 const NODE_MINIMO = 20;
 
 // --- utilità ----------------------------------------------------------------
@@ -57,7 +58,8 @@ function prova(comando) {
   }
 }
 
-const attendi = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+const attendi = (ms) =>
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
 // --- 1. Node ----------------------------------------------------------------
 
@@ -132,8 +134,12 @@ if (serveDocker) {
     );
   }
 
-  const inEsecuzione = prova(`docker ps --filter name=^/${CONTAINER}$ --format {{.Names}}`);
-  const giaCreato = prova(`docker ps -a --filter name=^/${CONTAINER}$ --format {{.Names}}`);
+  const inEsecuzione = prova(
+    `docker ps --filter name=^/${CONTAINER}$ --format {{.Names}}`,
+  );
+  const giaCreato = prova(
+    `docker ps -a --filter name=^/${CONTAINER}$ --format {{.Names}}`,
+  );
 
   if (inEsecuzione) {
     console.log("  già in esecuzione.");
@@ -162,7 +168,11 @@ if (serveDocker) {
   step("Attendo che il database risponda");
   let pronto = false;
   for (let tentativo = 0; tentativo < 40; tentativo++) {
-    if (prova(`docker exec ${CONTAINER} pg_isready -U postgres`)?.includes("accepting")) {
+    if (
+      prova(`docker exec ${CONTAINER} pg_isready -U postgres`)?.includes(
+        "accepting",
+      )
+    ) {
       pronto = true;
       break;
     }
