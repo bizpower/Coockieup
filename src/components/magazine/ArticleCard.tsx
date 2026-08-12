@@ -17,10 +17,19 @@ import { postDate, type PostCard } from "@/services/magazine";
 export function ArticleCard({
   post,
   featured = false,
+  headingLevel = 2,
 }: {
   post: PostCard;
   featured?: boolean;
+  /**
+   * Il livello del titolo dipende da cosa c'è sopra nella pagina: sotto l'h1
+   * di una lista è un h2, dentro un blocco "continua a leggere" che ha già il
+   * suo h2 è un h3. Saltare un livello rende la struttura incomprensibile a
+   * chi naviga con uno screen reader.
+   */
+  headingLevel?: 2 | 3;
 }) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   const date = postDate(post);
   const shapeIndex =
     post.slug.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) % COOKIE_SHAPES.length;
@@ -72,11 +81,13 @@ export function ArticleCard({
           <span className="text-cacao-soft">{post.readingMinutes} min di lettura</span>
         </div>
 
-        <h3 className={cn("mt-3 tracking-tight", featured ? "text-display" : "text-xl font-extrabold")}>
+        <Heading
+          className={cn("mt-3 tracking-tight", featured ? "text-display" : "text-xl font-extrabold")}
+        >
           <Link href={`/magazine/${post.slug}`} className="after:absolute after:inset-0">
             {post.title}
           </Link>
-        </h3>
+        </Heading>
 
         <p
           className={cn(

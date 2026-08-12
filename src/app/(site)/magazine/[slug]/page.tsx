@@ -213,7 +213,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (
                 <li key={item.id}>
-                  <ArticleCard post={item} />
+                  <ArticleCard post={item} headingLevel={3} />
                 </li>
               ))}
             </ul>
