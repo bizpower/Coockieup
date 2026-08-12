@@ -26,9 +26,27 @@ Il blueprint completo è in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
+## Guardarlo subito
+
+Un comando solo. Serve **Docker** (per il database) e **Node 20+**:
+
+```bash
+npm install
+npm run demo
+```
+
+Tira su un PostgreSQL, applica lo schema, popola catalogo, testi e articoli, e
+apre il sito su `http://localhost:3000`. L'amministrazione è su `/admin` con
+`admin@example.com` / `cambiami-subito`.
+
+Il pagamento non è collegato: gli ordini si registrano come da saldare, così il
+percorso d'acquisto si può provare fino in fondo senza conto Stripe.
+
+---
+
 ## Installazione
 
-Servono **Node 20+** e un **PostgreSQL** raggiungibile.
+Per lavorarci davvero. Servono **Node 20+** e un **PostgreSQL** raggiungibile.
 
 ```bash
 npm install
@@ -52,9 +70,11 @@ docker run --name brand-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=brand \
 
 | Comando | Cosa fa |
 |---|---|
+| `npm run demo` | Database in Docker, schema, contenuti e sito, in un colpo solo |
 | `npm run dev` | Sviluppo |
 | `npm run build` | Genera il client Prisma e compila |
 | `npm run typecheck` | TypeScript senza emettere |
+| `npm run lint` | eslint, preset di Next |
 | `npm run db:migrate` | Crea e applica una migrazione |
 | `npm run db:seed` | Popola il database (idempotente) |
 | `npm run db:studio` | Esplora i dati in una UI |
