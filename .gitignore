@@ -19,3 +19,7 @@ next-env.d.ts
 
 # Media caricati dall'admin in sviluppo locale
 public/uploads/
+
+# Generati da Next a ogni avvio in sviluppo, non sono sorgente
+AGENTS.md
+CLAUDE.md
