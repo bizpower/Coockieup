@@ -7,6 +7,7 @@ import { MAIN_NAV } from "@/config/site";
 import { LogoLink } from "@/components/brand/Logo";
 import { ButtonLink } from "@/components/ui/Button";
 import { CartIcon, CloseIcon, MenuIcon } from "@/components/ui/icons";
+import { useCartUI } from "@/components/commerce/CartUIProvider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,6 +23,7 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { openCart } = useCartUI();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -78,13 +80,17 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
         </ul>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
-          <Link
-            href="/cart"
+          {/* Apre il pannello invece di cambiare pagina: chi sta comprando non
+              deve perdere la scheda prodotto per controllare il carrello.
+              La pagina /cart resta raggiungibile dal pannello e dal footer. */}
+          <button
+            type="button"
+            onClick={openCart}
             className="hover:bg-crema relative flex h-11 w-11 items-center justify-center rounded-full transition-colors"
             aria-label={
               cartCount > 0
-                ? `Carrello, ${cartCount} ${cartCount === 1 ? "articolo" : "articoli"}`
-                : "Carrello, vuoto"
+                ? `Apri il carrello, ${cartCount} ${cartCount === 1 ? "articolo" : "articoli"}`
+                : "Apri il carrello, è vuoto"
             }
           >
             <CartIcon className="text-[1.35rem]" />
@@ -93,7 +99,7 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
                 {cartCount}
               </span>
             )}
-          </Link>
+          </button>
 
           <ButtonLink href="/shop" size="sm" className="hidden sm:inline-flex">
             Acquista ora

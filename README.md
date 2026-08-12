@@ -16,7 +16,7 @@ giorni: vedi [Cambiare il nome del brand](#cambiare-il-nome-del-brand) e
 |---|---|---|
 | 0 | Architettura, schema, design system | ✅ |
 | 1 | Scaffold, design token, arte del brand, homepage | ✅ |
-| 2 | Shop, prodotto, carrello, checkout, ordini | ⏳ |
+| 2 | Shop, prodotto, carrello, checkout, ordini | ✅ |
 | 3 | Admin: dashboard, prodotti, ordini, clienti, media | ⏳ |
 | 4 | Magazine e editor articoli | ⏳ |
 | 5 | Sitemap, structured data, analytics | ⏳ |
@@ -100,6 +100,38 @@ redatte o validate da un consulente prima dell'apertura degli ordini.
 
 ---
 
+## Pagamenti
+
+Il checkout **funziona già**, con o senza Stripe. Il provider lo decidono le
+variabili d'ambiente, non un flag nel codice:
+
+| Situazione | Comportamento |
+|---|---|
+| `STRIPE_SECRET_KEY` e `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` valorizzate | Il cliente viene mandato su Stripe Checkout. L'ordine diventa pagato quando arriva il webhook. |
+| Chiavi assenti | L'ordine viene registrato come **da saldare** e la pagina lo dichiara. Serve a provare tutto il flusso senza conto Stripe, e a incassare per bonifico se il negozio apre prima. |
+
+### Configurare Stripe
+
+1. Da [dashboard.stripe.com](https://dashboard.stripe.com/apikeys) copia la
+   chiave segreta e quella pubblicabile in `STRIPE_SECRET_KEY` e
+   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+2. Crea un endpoint webhook che punti a
+   `https://TUO-DOMINIO/api/webhooks/stripe`, sottoscritto all'evento
+   `checkout.session.completed`.
+3. Copia il *signing secret* dell'endpoint in `STRIPE_WEBHOOK_SECRET`.
+4. In locale: `stripe listen --forward-to localhost:3000/api/webhooks/stripe`.
+
+L'integrazione usa l'API REST via `fetch` e `node:crypto`: nessun SDK da
+installare o aggiornare. La firma dei webhook è verificata con confronto a
+tempo costante e finestra di tolleranza di 5 minuti, quindi una richiesta
+catturata non può essere riusata per dichiarare pagato un ordine.
+
+**Un ordine diventa pagato solo dal webhook**, mai dal ritorno del cliente sul
+sito: chi torna da Stripe può arrivare sulla conferma prima dell'incasso, e un
+redirect nel browser non è una prova di pagamento.
+
+---
+
 ## Immagini
 
 Prodotto, packaging e biscotti sono **disegnati in vettoriale**
@@ -147,7 +179,8 @@ Aggiungere un blocco di testo modificabile = aggiungere una voce a quel registro
 - [ ] Far redigere le cinque pagine legali
 - [ ] Sostituire le immagini vettoriali con le fotografie
 - [ ] Eliminare recensioni e ordini demo dall'admin
-- [ ] Configurare Stripe (Fase 2)
+- [ ] Configurare Stripe (chiavi + webhook)
+- [ ] Attivare o eliminare il coupon di esempio `BENVENUTO10` (creato disattivato)
 - [ ] Configurare il provider newsletter e gli analytics (Fase 5)
 - [ ] Portare `NEXT_PUBLIC_ALLOW_INDEXING` a `true`
 - [ ] Cambiare la password dell'utente admin creato dal seed

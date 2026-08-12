@@ -364,6 +364,24 @@ async function seedLegalPages() {
   console.log(`  pagine legali: ${LEGAL_PAGES.length} (tutte in revisione)`);
 }
 
+async function seedCoupon() {
+  // Volutamente disattivato: un codice sconto vivo per sbaglio il giorno del
+  // lancio si paga in denaro. Si attiva dall'admin quando serve davvero.
+  const existing = await db.coupon.findUnique({ where: { code: "BENVENUTO10" } });
+  if (existing) return;
+
+  await db.coupon.create({
+    data: {
+      code: "BENVENUTO10",
+      type: "PERCENT",
+      value: 10,
+      minSubtotalCents: 1500,
+      isActive: false,
+    },
+  });
+  console.log("  coupon: BENVENUTO10 (disattivato)");
+}
+
 async function seedShipping() {
   const existing = await db.shippingRate.findFirst();
   if (existing) return;
@@ -390,6 +408,7 @@ async function main() {
   await seedFaqs();
   await seedCategories();
   await seedLegalPages();
+  await seedCoupon();
   await seedShipping();
   console.log("Fatto.");
 }
