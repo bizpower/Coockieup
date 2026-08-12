@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from "react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** Larghezza massima e respiro laterale, identici in tutto il sito. */
@@ -55,13 +55,25 @@ export function Section({
   );
 }
 
-/** L'etichetta maiuscola sopra i titoli di sezione. */
+/**
+ * L'etichetta maiuscola sopra i titoli di sezione.
+ *
+ * `style` è ammesso perché le categorie del magazine portano un colore scelto
+ * dalla redazione: è un dato, non una classe, e Tailwind non può generare a
+ * build time una tinta decisa a runtime.
+ */
 export function Eyebrow({
   children,
   className,
+  style,
 }: {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
 }) {
-  return <p className={cn("eyebrow text-fiamma", className)}>{children}</p>;
+  return (
+    <p className={cn("eyebrow text-fiamma", className)} style={style}>
+      {children}
+    </p>
+  );
 }

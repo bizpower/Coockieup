@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@/components/seo/Analytics";
+import { OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { fontVariables } from "@/config/fonts";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/config/brand";
 import {
@@ -59,6 +61,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Vai al contenuto
         </a>
         {children}
+
+        <OrganizationJsonLd />
+        <Analytics />
+
         <span className="sr-only">
           {BRAND_NAME} — {BRAND_TAGLINE}
         </span>

@@ -6,12 +6,14 @@ import { CookieShape } from "@/components/brand/CookieShape";
 import { PackShot } from "@/components/brand/PackShot";
 import { BuyBox } from "@/components/commerce/BuyBox";
 import { NutritionTable } from "@/components/commerce/NutritionTable";
+import { BreadcrumbJsonLd, FaqJsonLd, ProductJsonLd } from "@/components/seo/JsonLd";
+import { PageViewTracker } from "@/components/seo/PageViewTracker";
 import { FaqAccordion } from "@/components/marketing/FaqAccordion";
 import { SocialProof } from "@/components/marketing/SocialProof";
 import { Badge } from "@/components/ui/Badge";
 import { Container, Eyebrow, Section } from "@/components/ui/Layout";
 import { db } from "@/lib/db";
-import { getPublishedReviews } from "@/services/catalog";
+import { getPublishedReviews, getRatingSummary } from "@/services/catalog";
 import { getContent } from "@/services/content";
 
 function isShapeKey(value: string): value is CookieShapeKey {
@@ -70,7 +72,7 @@ export default async function ProductPage({
   const product = await loadProduct(slug);
   if (!product) notFound();
 
-  const [reviews, socialProof, faqs, shippingRate] = await Promise.all([
+  const [reviews, socialProof, faqs, shippingRate, rating] = await Promise.all([
     getPublishedReviews(product.id, 3),
     getContent("socialProof"),
     db.faqItem.findMany({
@@ -79,12 +81,42 @@ export default async function ProductPage({
       take: 6,
     }),
     db.shippingRate.findFirst({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    // Solo recensioni reali: vedi la nota in ProductJsonLd.
+    getRatingSummary(product.id),
   ]);
 
   const recipeInProgress = product.ingredients.some((i) => !i.isConfirmed);
 
+  const cheapest = product.variants.reduce<(typeof product.variants)[number] | undefined>(
+    (best, variant) => (!best || variant.priceCents < best.priceCents ? variant : best),
+    undefined,
+  );
+
   return (
     <>
+      <PageViewTracker path={`/product/${product.slug}`} />
+
+      {cheapest && (
+        <ProductJsonLd
+          name={product.name}
+          description={product.metaDescription ?? product.description}
+          slug={product.slug}
+          sku={cheapest.sku}
+          priceCents={cheapest.priceCents}
+          inStock={product.variants.some((variant) => variant.stock > 0)}
+          rating={rating}
+        />
+      )}
+
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Shop", path: "/shop" },
+          { name: product.name, path: `/product/${product.slug}` },
+        ]}
+      />
+
+      <FaqJsonLd items={faqs} />
       <Section className="pb-0 sm:pb-0 lg:pb-0">
         <Container>
           <nav aria-label="Percorso" className="text-cacao-soft mb-8 text-sm">

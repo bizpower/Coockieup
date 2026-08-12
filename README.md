@@ -17,10 +17,10 @@ giorni: vedi [Cambiare il nome del brand](#cambiare-il-nome-del-brand) e
 | 0 | Architettura, schema, design system | ✅ |
 | 1 | Scaffold, design token, arte del brand, homepage | ✅ |
 | 2 | Shop, prodotto, carrello, checkout, ordini | ✅ |
-| 3 | Admin: dashboard, prodotti, ordini, clienti, media | ⏳ |
-| 4 | Magazine e editor articoli | ⏳ |
-| 5 | Sitemap, structured data, analytics | ⏳ |
-| 6 | Performance, accessibilità, stati, rifiniture | ⏳ |
+| 3 | Admin: dashboard, prodotti, ordini, clienti, media | ✅ |
+| 4 | Magazine e editor articoli | ✅ |
+| 5 | Sitemap, structured data, analytics | ✅ |
+| 6 | Stati di caricamento, errore e vuoto, 404, accessibilità | ✅ |
 
 Il blueprint completo è in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -59,6 +59,112 @@ docker run --name brand-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=brand \
 | `npm run db:seed` | Popola il database (idempotente) |
 | `npm run db:studio` | Esplora i dati in una UI |
 | `npm run db:reset` | Azzera e riapplica tutto |
+
+---
+
+## Area amministrativa
+
+Si entra da **`/admin`**. Il seed crea un utente con le credenziali di
+`ADMIN_EMAIL` e `ADMIN_PASSWORD` (in mancanza: `admin@example.com` /
+`cambiami-subito` — da cambiare al primo accesso).
+
+| Sezione | A cosa serve |
+|---|---|
+| **Dashboard** | Fatturato, ordini, scontrino medio, clienti, pezzi venduti, conversione, traffico del magazine. Gli ordini di prova si includono o escludono con un interruttore. |
+| **Ordini** | Ricerca, filtro per stato, dettaglio. Lo stato avanza a passi; annullare o rimborsare **rimette a scaffale** i pezzi. Codice di tracciamento e note interne. |
+| **Clienti** | Aggregati calcolati sugli ordini incassati: quanti ordini, quanto speso, ultimo acquisto. |
+| **Prodotti** | Anagrafica, SEO, formati e prezzi, e i tre blocchi di dati soggetti a conferma. |
+| **Codici sconto** | Percentuale, importo fisso o spedizione gratuita. Un codice già usato viene disattivato invece che eliminato, per non perdere lo storico. |
+| **Magazine** | Editor TipTap con pannello SEO, categorie, tag, programmazione. |
+| **Media** | Caricamento immagini con testo alternativo **obbligatorio**. |
+| **Testi del sito** | Il copy della homepage. Validato prima di essere salvato: un errore di battitura non può rompere la pagina. |
+| **FAQ** | Domande, risposte e interruttore "confermata". |
+| **Newsletter** | Iscritti raccolti dal sito e consensi dati in cassa. |
+| **Impostazioni** | Checklist di lancio, pagine legali, pulizia dei dati di esempio. |
+
+### La checklist di lancio
+
+`/admin/settings` calcola a ogni caricamento cosa manca prima di aprire gli
+ordini: interroga il database e le variabili d'ambiente invece di leggere una
+lista scritta a mano, quindi non può invecchiare. Le voci **bloccanti** sono
+quelle che riguardano dati dichiarati al pubblico — nome, etichetta, pagine
+legali, pagamenti.
+
+### Il flusso di scrittura
+
+1. `/admin/blog/new`, titolo (lo slug si compila da solo).
+2. Si scrive. Il pannello SEO a destra conta parole, occorrenze della parola
+   chiave, sottotitoli e link interni **mentre si scrive**, e mostra l'anteprima
+   del risultato su Google.
+3. *Salva bozza*, *Programma* (con data futura) o *Pubblica*.
+
+Un articolo programmato compare da solo quando arriva la sua ora: non serve un
+processo schedulato, perché la visibilità è filtrata a ogni lettura.
+
+---
+
+## Deploy
+
+Serve un host Node e un PostgreSQL gestito. Il progetto non usa nulla di
+specifico di una piattaforma.
+
+### Su Vercel
+
+1. Importa il repository.
+2. Collega un database (Vercel Postgres, Neon, Supabase) e copia la stringa in `DATABASE_URL`.
+3. Imposta le variabili d'ambiente del file `.env.example` che ti servono.
+   `NEXT_PUBLIC_SITE_URL` deve essere il dominio reale, senza barra finale.
+4. Genera `AUTH_SECRET` con `openssl rand -base64 32`.
+5. Al primo deploy applica lo schema e popola:
+   `npx prisma migrate deploy && npm run db:seed`
+6. Configura il webhook Stripe sull'URL definitivo.
+7. Quando è tutto pronto, `NEXT_PUBLIC_ALLOW_INDEXING="true"`.
+
+### Una cosa da sistemare prima del traffico vero
+
+Le immagini caricate dall'admin finiscono in `public/uploads`, sul disco del
+server. Su una piattaforma serverless quel disco è effimero: i file spariscono
+al rilancio. Il punto da cambiare è uno solo — `src/app/api/media/upload/route.ts` —
+sostituendo la scrittura su disco con Vercel Blob, S3 o equivalente. Il resto
+del progetto conosce solo l'URL salvato in `Media.url` e non va toccato.
+
+---
+
+## Analytics
+
+GA4, Meta Pixel e TikTok Pixel sono predisposti in
+`src/components/seo/Analytics.tsx`. Ogni script viene caricato **solo** se il
+suo ID è presente fra le variabili d'ambiente: senza ID non parte nessuna
+richiesta e non viene scritto nessun cookie di terze parti.
+
+```
+NEXT_PUBLIC_GA4_MEASUREMENT_ID="G-XXXXXXX"
+NEXT_PUBLIC_META_PIXEL_ID=""
+NEXT_PUBLIC_TIKTOK_PIXEL_ID=""
+GOOGLE_SITE_VERIFICATION=""
+```
+
+**Prima di attivarli serve un sistema di gestione del consenso**: questi script
+vanno caricati dopo l'accettazione, non al caricamento della pagina. Il punto in
+cui agganciarlo è quel file.
+
+Indipendentemente da tutto questo, il sito conta già le visite in proprio
+(`/api/track`): solo percorso e istante, nessun cookie e nessun identificatore.
+È quello che alimenta il KPI del traffico in dashboard.
+
+---
+
+## SEO
+
+- Metadata dinamici su ogni rotta, `sitemap.xml` e `robots.txt` generati dal database
+- Canonical su tutte le pagine, Open Graph e Twitter card, immagine di anteprima generata dal codice
+- JSON-LD: `Organization`, `WebSite`, `Product` con `Offer`, `Article`, `BreadcrumbList`, `FAQPage`
+- Carrello, cassa, area ordini e bozze legali sono esclusi da indice e sitemap
+
+Due regole applicate ovunque: **l'`AggregateRating` non viene emesso se le
+uniche recensioni sono di esempio**, e le **FAQ non confermate non entrano nel
+`FAQPage`**. Dichiarare a Google come certo ciò che sul sito è marcato "da
+confermare" è il tipo di incoerenza che si paga con una penalizzazione.
 
 ---
 

@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { contentRegistryEntries } from "../src/services/content.registry";
+import { seedPosts } from "./seed-posts";
 
 const db = new PrismaClient();
 
@@ -410,6 +411,7 @@ async function main() {
   await seedLegalPages();
   await seedCoupon();
   await seedShipping();
+  await seedPosts(db);
   console.log("Fatto.");
 }
 

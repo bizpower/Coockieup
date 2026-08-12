@@ -8,6 +8,7 @@ import { Hero } from "@/components/marketing/Hero";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { IngredientSection } from "@/components/marketing/IngredientSection";
 import { SocialProof } from "@/components/marketing/SocialProof";
+import { PageViewTracker } from "@/components/seo/PageViewTracker";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { Container, Eyebrow, Section } from "@/components/ui/Layout";
 import { getFeaturedProduct, getPublishedReviews } from "@/services/catalog";
@@ -46,6 +47,8 @@ export default async function HomePage() {
 
   return (
     <>
+      <PageViewTracker path="/" />
+
       <Hero content={hero} />
 
       <FlavorShowcase

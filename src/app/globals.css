@@ -200,3 +200,240 @@
     }
   }
 }
+
+/* =========================================================================
+   CORPO DELL'ARTICOLO
+   Tipografia editoriale per l'HTML che esce dall'editor. Regole scritte a
+   mano invece del plugin typography di Tailwind: il testo del magazine deve
+   avere la voce di questo brand, non quella di default di un plugin.
+   ========================================================================= */
+
+@layer components {
+  .article-body {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    max-width: 68ch;
+  }
+
+  .article-body > * + * {
+    margin-top: 1.5em;
+  }
+
+  .article-body h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-top: 2.4em;
+  }
+
+  .article-body h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin-top: 2em;
+  }
+
+  .article-body h4 {
+    font-weight: 700;
+    font-size: 1.125rem;
+    margin-top: 1.8em;
+  }
+
+  .article-body a {
+    color: var(--color-fiamma-deep);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+  }
+
+  .article-body a:hover {
+    color: var(--color-cacao);
+  }
+
+  .article-body strong {
+    font-weight: 700;
+  }
+
+  .article-body ul,
+  .article-body ol {
+    padding-left: 1.4em;
+  }
+
+  .article-body ul {
+    list-style: disc;
+  }
+
+  .article-body ol {
+    list-style: decimal;
+  }
+
+  .article-body li + li {
+    margin-top: 0.5em;
+  }
+
+  .article-body li::marker {
+    color: var(--color-fiamma);
+  }
+
+  .article-body blockquote {
+    border-left: 4px solid var(--color-fiamma);
+    padding-left: 1.25em;
+    font-family: var(--font-display);
+    font-size: 1.25em;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body img {
+    border-radius: var(--radius-card);
+    width: 100%;
+    height: auto;
+  }
+
+  .article-body figcaption {
+    color: var(--color-cacao-soft);
+    font-size: 0.875rem;
+    margin-top: 0.75em;
+  }
+
+  .article-body hr {
+    border: 0;
+    border-top: 1px solid var(--color-cacao-line);
+    margin-block: 3em;
+  }
+
+  .article-body code {
+    background: var(--color-crema);
+    border-radius: 4px;
+    padding: 0.15em 0.4em;
+    font-size: 0.9em;
+  }
+
+  .article-body pre {
+    background: var(--color-cacao);
+    color: var(--color-panna);
+    border-radius: var(--radius-card);
+    padding: 1.25em;
+    overflow-x: auto;
+  }
+
+  .article-body pre code {
+    background: none;
+    padding: 0;
+  }
+
+  /* Le tabelle scorrono da sole invece di far scorrere la pagina. */
+  .article-body table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+
+  .article-body th,
+  .article-body td {
+    border: 1px solid var(--color-cacao-line);
+    padding: 0.65em 0.85em;
+    text-align: left;
+  }
+
+  .article-body th {
+    background: var(--color-crema);
+    font-weight: 700;
+  }
+
+  .article-body iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border-radius: var(--radius-card);
+    border: 0;
+  }
+
+  /* Stesse regole dentro l'editor, così si scrive vedendo il risultato. */
+  .prose-editor {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+  }
+
+  .prose-editor > * + * {
+    margin-top: 1.1em;
+  }
+
+  .prose-editor h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 1.6em;
+  }
+
+  .prose-editor h3 {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-top: 1.4em;
+  }
+
+  .prose-editor h4 {
+    font-weight: 700;
+    margin-top: 1.2em;
+  }
+
+  .prose-editor ul {
+    list-style: disc;
+    padding-left: 1.4em;
+  }
+
+  .prose-editor ol {
+    list-style: decimal;
+    padding-left: 1.4em;
+  }
+
+  .prose-editor blockquote {
+    border-left: 4px solid var(--color-fiamma);
+    padding-left: 1em;
+    font-style: italic;
+  }
+
+  .prose-editor a {
+    color: var(--color-fiamma-deep);
+    text-decoration: underline;
+  }
+
+  .prose-editor img {
+    border-radius: 0.75rem;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .prose-editor table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .prose-editor th,
+  .prose-editor td {
+    border: 1px solid var(--color-cacao-line);
+    padding: 0.5em 0.7em;
+  }
+
+  .prose-editor th {
+    background: var(--color-crema);
+    font-weight: 700;
+  }
+
+  /* Segnaposto sul primo paragrafo vuoto: senza, l'editor è una scatola muta. */
+  .prose-editor p.is-editor-empty:first-child::before {
+    content: "Scrivi qui l'articolo…";
+    color: var(--color-cacao-soft);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+}
