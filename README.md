@@ -188,22 +188,30 @@ confermare" è il tipo di incoerenza che si paga con una penalizzazione.
 
 ---
 
-## Cambiare il nome del brand
+## Il marchio, e come cambiarlo
 
 Una riga, in `config/brand.ts`:
 
 ```ts
-export const BRAND_NAME = "SGRANÀ";
+export const BRAND_NAME = "CookieUp";
 ```
 
 Cambiala e si aggiornano logo, navbar, footer, **il disegno della confezione**,
-i metadata, i dati strutturati e i titoli delle pagine. Nessun altro file
-contiene il nome. Nello stesso file trovi anche il prefisso dei numeri d'ordine
-(`BRAND_ORDER_PREFIX`), il payoff e i dati legali.
+l'immagine di anteprima social, l'intestazione delle email, i metadata, i dati
+strutturati e i titoli delle pagine. Nessun altro file contiene il nome. Nello
+stesso file trovi anche il prefisso dei numeri d'ordine (`BRAND_ORDER_PREFIX`,
+oggi `CU`), il payoff e i dati legali.
 
-`SGRANÀ` è un segnaposto funzionante, scelto per poter giudicare il sito come
-un brand vero invece che come un template pieno di `[BRAND NAME]`. Non è una
-decisione presa.
+Il logotipo non è un'immagine: è composto dal carattere display, quindi non ha
+una versione sgranata e non va rifatto a ogni misura. Il segno è la seconda
+metà del nome — **Up** in fiamma, sollevata di un soffio dalla linea di base:
+il punteggio che sale quando prendi il power-up.
+
+Quella spezzatura non è scritta a mano. `src/components/brand/wordmark.ts`
+legge il nome: se è in camelCase lo divide sulla maiuscola interna e colora la
+seconda metà, altrimenti torna al punto in fiamma dopo il nome. Un nome futuro
+tutto attaccato continua quindi a funzionare senza toccare i quattro punti che
+disegnano il marchio (pagina, confezione, immagine social, email).
 
 ---
 

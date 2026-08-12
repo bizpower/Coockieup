@@ -1,6 +1,19 @@
 import { BRAND_NAME } from "@/config/brand";
+import { wordmark } from "./wordmark";
 import { cn } from "@/lib/utils";
 import { CookieArt } from "./CookieShape";
+
+const mark = wordmark();
+
+/**
+ * Il marchio deve stare dentro il corpo della busta (che va da x=52 a x=328)
+ * qualunque nome arrivi, senza che qualcuno debba ricontrollare il disegno a
+ * ogni rebrand. Il carattere display in extrabold avanza circa 0.55em per
+ * lettera: da lì si ricava la misura che tiene il logotipo dentro i 210 punti
+ * di larghezza utile, col tetto a 54 perché un nome cortissimo non deve
+ * diventare un cartello stradale.
+ */
+const markFontSize = Math.min(54, Math.round(210 / ((mark.lead.length + mark.accent.length) * 0.55)));
 
 /**
  * La confezione, disegnata come vettore.
@@ -98,13 +111,16 @@ export function PackShot({
         y="170"
         textAnchor="middle"
         className="font-display"
-        fontSize="54"
+        fontSize={markFontSize}
         fontWeight="800"
         letterSpacing="-2.4"
         fill="#241812"
       >
-        {BRAND_NAME}
-        <tspan fill="#FF4B26">.</tspan>
+        {mark.lead}
+        {/* Stesso gesto del logo in pagina: l'accento sale di poco. */}
+        <tspan fill="#FF4B26" dy={mark.kind === "camel" ? -4 : 0}>
+          {mark.accent}
+        </tspan>
       </text>
 
       {/* Pastiglia con la promessa numerica. */}

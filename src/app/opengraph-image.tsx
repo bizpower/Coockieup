@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/config/brand";
+import { wordmark } from "@/components/brand/wordmark";
 
 /**
  * Immagine di anteprima per la condivisione.
@@ -13,6 +14,8 @@ import { BRAND_NAME, BRAND_TAGLINE } from "@/config/brand";
  */
 
 export const alt = `${BRAND_NAME} — ${BRAND_TAGLINE}`;
+
+const mark = wordmark();
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -58,9 +61,20 @@ export default function OpenGraphImage() {
           MINI PROTEIN COOKIES
         </div>
 
-        <div style={{ display: "flex", fontSize: 128, fontWeight: 800, color: "#241812" }}>
-          {BRAND_NAME}
-          <span style={{ color: "#FF4B26" }}>.</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            fontSize: 128,
+            fontWeight: 800,
+            color: "#241812",
+          }}
+        >
+          {mark.lead}
+          {/* Stesso gesto del logo in pagina: l'accento sale di poco. */}
+          <span style={{ color: "#FF4B26", marginTop: mark.kind === "camel" ? -9 : 0 }}>
+            {mark.accent}
+          </span>
         </div>
 
         <div

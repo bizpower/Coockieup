@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/config/brand";
+import { wordmark } from "./wordmark";
 import { cn } from "@/lib/utils";
 
 /**
  * Il marchio è tipografico, non un'immagine.
  *
- * È una scelta obbligata e insieme corretta: finché il nome non è deciso, un
- * logotipo disegnato sarebbe da rifare. Un wordmark composto dal carattere
- * display si riscrive cambiando BRAND_NAME, e il punto in `fiamma` resta il
- * segno riconoscibile qualunque nome vinca.
+ * Un logotipo composto dal carattere display si ridisegna da solo cambiando
+ * BRAND_NAME, resta nitido a ogni misura e non ha una versione a bassa
+ * risoluzione da inseguire.
+ *
+ * Il segno è la seconda metà del nome: `Up` in fiamma, sollevata di un soffio
+ * dalla linea di base. È il punteggio che sale quando prendi il power-up,
+ * ottenuto spostando due lettere invece di disegnare una freccia.
  */
 
 const SIZES = {
@@ -25,18 +29,26 @@ type LogoProps = {
 };
 
 export function Logo({ size = "md", className, inverted }: LogoProps) {
+  const { lead, accent, kind } = wordmark();
   return (
     <span
       className={cn(
-        "font-display inline-flex items-baseline font-extrabold uppercase leading-none tracking-[-0.045em]",
+        "font-display inline-flex items-baseline font-extrabold leading-none tracking-[-0.045em]",
+        // Un nome in camelCase va letto come è scritto: forzarlo maiuscolo
+        // ("COOKIEUP") gli toglierebbe proprio la giuntura che lo rende
+        // leggibile in un colpo d'occhio.
+        kind === "dot" && "uppercase",
         SIZES[size],
         inverted ? "text-panna" : "text-cacao",
         className,
       )}
     >
-      {BRAND_NAME}
-      <span className="text-fiamma" aria-hidden="true">
-        .
+      {lead}
+      <span
+        className={cn("text-fiamma", kind === "camel" && "-translate-y-[0.07em]")}
+        aria-hidden={kind === "dot" ? true : undefined}
+      >
+        {accent}
       </span>
     </span>
   );

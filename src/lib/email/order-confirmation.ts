@@ -1,4 +1,5 @@
 import { BRAND_LEGAL, BRAND_NAME } from "@/config/brand";
+import { wordmark } from "@/components/brand/wordmark";
 import { SITE_URL } from "@/config/site";
 import { formatPrice } from "@/lib/format";
 import type { EmailMessage } from "./types";
@@ -12,7 +13,13 @@ import type { EmailMessage } from "./types";
  *
  * La versione testuale non è un ripiego: alcuni client la mostrano per scelta
  * dell'utente, e senza di essa i filtri antispam alzano il punteggio.
+ *
+ * Il marchio in testa è due colori e basta: qui l'accento non si solleva come
+ * nel sito, perché `transform` e `vertical-align` non sono affidabili nei
+ * client di posta e un logo storto è peggio di un logo piatto.
  */
+
+const mark = wordmark();
 
 export type OrderEmailData = {
   number: string;
@@ -83,7 +90,7 @@ export function buildOrderConfirmationEmail(order: OrderEmailData): EmailMessage
 
         <tr><td style="padding:32px 32px 0;">
           <div style="font-size:26px;font-weight:800;letter-spacing:-1px;color:#241812;">
-            ${escape(BRAND_NAME)}<span style="color:#FF4B26;">.</span>
+            ${escape(mark.lead)}<span style="color:#FF4B26;">${escape(mark.accent)}</span>
           </div>
         </td></tr>
 

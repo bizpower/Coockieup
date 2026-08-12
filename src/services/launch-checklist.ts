@@ -1,5 +1,5 @@
 import "server-only";
-import { BRAND_LEGAL, BRAND_NAME } from "@/config/brand";
+import { BRAND_LEGAL, BRAND_NAME, BRAND_SOCIAL } from "@/config/brand";
 import { db } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { isStripeConfigured } from "@/lib/payments";
@@ -52,14 +52,23 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
 
   const labelData = unconfirmedNutrition + unconfirmedIngredients + unconfirmedAllergens;
   const photosMissing = pendingPhotos().length;
+  const socialPending = pendingSocial();
 
   return [
     {
+      // Il nome è deciso — CookieUp — quindi la riga non chiede più di
+      // sceglierlo. Quello che resta aperto sull'identità sono i profili:
+      // compaiono nel footer e vengono dichiarati a Google come account
+      // ufficiali del brand, quindi finché puntano alla home della
+      // piattaforma stiamo dichiarando il falso.
       id: "brand",
-      label: "Scegliere il nome definitivo",
-      detail: `Ora è "${BRAND_NAME}", un segnaposto funzionante. Si cambia da config/brand.ts e si aggiorna tutto, packaging disegnato compreso.`,
-      done: false,
-      blocking: true,
+      label: "Collegare i profili social",
+      detail:
+        socialPending.length === 0
+          ? `I profili dichiarati come ufficiali di ${BRAND_NAME} portano ai rispettivi account.`
+          : `${socialPending.join(", ")}: il link porta alla home della piattaforma, non a un profilo. Si cambia da config/brand.ts.`,
+      done: socialPending.length === 0,
+      blocking: false,
     },
     {
       id: "label",
@@ -130,7 +139,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       label: "Attivare la manutenzione notturna",
       detail: process.env.CRON_SECRET
         ? staleOrders > 0
-          ? `Configurata. Ci sono ${staleOrders} ordini non pagati oltre le 48 ore: verranno liberati alla prossima esecuzione.`
+          ? `Configurata. Ci sono ${staleOrders} ordini non pagati oltre la soglia prevista per il loro metodo di pagamento: verranno liberati alla prossima esecuzione.`
           : "Configurata. Le scorte degli ordini abbandonati vengono liberate ogni notte."
         : "CRON_SECRET non impostata: nessuno libera le scorte degli ordini mai pagati. Un checkout abbandonato tiene la merce bloccata a tempo indeterminato.",
       done: Boolean(process.env.CRON_SECRET),
@@ -195,4 +204,27 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       blocking: false,
     },
   ];
+}
+
+/**
+ * Quali social sono ancora un segnaposto.
+ *
+ * Un link è un segnaposto quando porta alla home della piattaforma invece che
+ * a un profilo: `https://instagram.com/` non è l'account di nessuno. Si
+ * riconosce dal percorso vuoto, senza dover tenere una lista di stringhe da
+ * confrontare che si scorderebbe alla prossima piattaforma aggiunta.
+ */
+/** Le piattaforme che non si scrivono con la sola iniziale maiuscola. */
+const SOCIAL_LABELS: Record<string, string> = { tiktok: "TikTok" };
+
+function pendingSocial(): string[] {
+  return Object.entries(BRAND_SOCIAL)
+    .filter(([, url]) => {
+      try {
+        return new URL(url).pathname.replace(/\/+$/, "") === "";
+      } catch {
+        return true; // Un indirizzo che non si riesce nemmeno a leggere è da sistemare.
+      }
+    })
+    .map(([platform]) => SOCIAL_LABELS[platform] ?? platform[0]!.toUpperCase() + platform.slice(1));
 }

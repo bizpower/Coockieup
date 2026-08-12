@@ -1,22 +1,24 @@
 /**
  * IDENTITÀ DEL BRAND — punto di modifica unico.
  *
- * Il nome definitivo non è ancora stato scelto. Cambia `BRAND_NAME` qui sotto e
- * l'intero progetto si aggiorna: logo, navbar, footer, metadata, structured data,
- * email, numerazione ordini e copy. Nessun altro file contiene il nome del brand.
+ * Cambia `BRAND_NAME` qui sotto e l'intero progetto si aggiorna: logo, navbar,
+ * footer, confezione disegnata, immagine di anteprima, metadata, structured
+ * data, email e numerazione ordini. Nessun altro file contiene il nome.
  *
- * Direzioni valutate: SGRANÀ · MORDÌ · CROCCÒ · SGRANÌ · BISCÙ · BOCCÒ
+ * Il nome scelto è CookieUp: dice il prodotto e insieme il power-up dei
+ * videogiochi. Il logotipo lo sfrutta — vedi src/components/brand/wordmark.ts,
+ * dove la seconda metà del nome prende il colore e sale di un soffio.
  */
-export const BRAND_NAME = "SGRANÀ";
+export const BRAND_NAME = "CookieUp";
 
-/** Prefisso dei numeri d'ordine, es. SG-2026-0001. Max 3 lettere. */
-export const BRAND_ORDER_PREFIX = "SG";
+/** Prefisso dei numeri d'ordine, es. CU-2026-0001. Max 3 lettere. */
+export const BRAND_ORDER_PREFIX = "CU";
 
 /** Payoff breve. Compare sotto il logo e nei metadata. */
 export const BRAND_TAGLINE = "The Mini Protein Cookies";
 
 /** Come si legge il brand ad alta voce (usato in `speakable` e nei prompt vocali). */
-export const BRAND_PHONETIC = "sgra-NÀ";
+export const BRAND_PHONETIC = "cùchi-àp";
 
 export const BRAND_LEGAL = {
   /** Ragione sociale — DA CONFERMARE prima del lancio. */
