@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/guard";
+import { sendOrderConfirmation } from "@/services/order-email";
 
 /**
  * Gestione ordini dall'area amministrativa.
@@ -82,6 +83,21 @@ export async function updateOrderNotes(orderId: string, formData: FormData) {
 
   revalidatePath(`/admin/orders/${orderId}`);
   return { ok: true, message: "Note salvate." };
+}
+
+/**
+ * Rimanda la conferma d'ordine.
+ *
+ * Serve quando il provider di posta era spento o ha avuto un guasto: senza
+ * questo, l'unico rimedio sarebbe scrivere l'email a mano dal proprio client.
+ */
+export async function resendOrderConfirmation(orderId: string) {
+  await requireAdmin();
+
+  const result = await sendOrderConfirmation(orderId);
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  return { ok: result.sent, message: result.message };
 }
 
 /** Elimina in blocco gli ordini di collaudo. Da usare prima dell'apertura. */

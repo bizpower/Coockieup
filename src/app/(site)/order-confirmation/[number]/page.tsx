@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BRAND_LEGAL } from "@/config/brand";
 import { CookieShape } from "@/components/brand/CookieShape";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -57,7 +58,17 @@ export default async function OrderConfirmationPage({
             {order.number}
           </p>
           <p className="text-cacao-soft mt-3 text-sm">
-            Ti abbiamo scritto a <span className="text-cacao font-semibold">{order.email}</span>.
+            {order.confirmationEmailSentAt ? (
+              <>
+                Ti abbiamo scritto a{" "}
+                <span className="text-cacao font-semibold">{order.email}</span>.{" "}
+              </>
+            ) : (
+              <>
+                L&apos;ordine è registrato a nome di{" "}
+                <span className="text-cacao font-semibold">{order.email}</span>.{" "}
+              </>
+            )}
             Conserva questo numero: serve per ritrovare l&apos;ordine da{" "}
             <Link href="/account" className="underline underline-offset-2">
               I miei ordini
@@ -65,6 +76,23 @@ export default async function OrderConfirmationPage({
             .
           </p>
         </div>
+
+        {/* Se l'email non è partita non si finge il contrario: si dice come
+            recuperare il riepilogo e a chi scrivere. */}
+        {!order.confirmationEmailSentAt && (
+          <p className="border-cacao-line bg-crema text-cacao mt-6 border-l-4 px-5 py-4 text-sm leading-relaxed">
+            <strong>Non ti abbiamo inviato un&apos;email di conferma.</strong> Il riepilogo
+            è tutto in questa pagina: salvala o segna il numero d&apos;ordine. Per qualsiasi
+            cosa scrivici a{" "}
+            <a
+              href={`mailto:${BRAND_LEGAL.supportEmail}`}
+              className="font-semibold underline underline-offset-2"
+            >
+              {BRAND_LEGAL.supportEmail}
+            </a>
+            .
+          </p>
+        )}
 
         {paymentFailed && (
           <p className="border-danger bg-fiamma-wash text-danger mt-6 border-l-4 px-5 py-4 text-sm font-semibold">
@@ -76,7 +104,9 @@ export default async function OrderConfirmationPage({
         {awaitingPayment && !paymentFailed && (
           <p className="border-warning bg-energy-wash mt-6 border-l-4 px-5 py-4 text-sm leading-relaxed font-medium">
             {order.paymentProvider === "manual"
-              ? "L'ordine è in attesa di pagamento: trovi i dati per il bonifico nell'email di conferma. Prepariamo la spedizione appena lo riceviamo."
+              ? order.confirmationEmailSentAt
+                ? "L'ordine è in attesa di pagamento tramite bonifico. Ti scriviamo i riferimenti; appena lo riceviamo prepariamo la spedizione."
+                : "L'ordine è in attesa di pagamento tramite bonifico. Scrivici per ricevere i riferimenti: prepariamo la spedizione appena lo riceviamo."
               : "Stiamo attendendo la conferma del pagamento. Se hai completato l'operazione, questa pagina si aggiorna entro qualche minuto."}
           </p>
         )}

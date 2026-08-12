@@ -367,6 +367,13 @@ model Order {
   adminNote    String?
   trackingCode String?
 
+  /// Quando la conferma è partita davvero. Null = non inviata: il sito lo dice
+  /// al cliente invece di dichiarare un invio mai avvenuto, e l'area
+  /// amministrativa permette di ritentare.
+  confirmationEmailSentAt DateTime?
+  /// Perché l'ultimo tentativo non è riuscito. Serve all'assistenza.
+  confirmationEmailError  String?
+
   /// Gli ordini di esempio sono marcati: la dashboard li filtra con un interruttore.
   isDemo Boolean @default(false)
 

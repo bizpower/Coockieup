@@ -53,27 +53,3 @@ export function LogoLink({ size, inverted, className }: LogoProps) {
     </Link>
   );
 }
-
-/**
- * Bollino da packaging: il timbro tondo che nei brand food italiani porta la
- * promessa breve. Testo su righe, non su tracciato curvo, per restare leggibile
- * anche a 64px e non introdurre id duplicati nel DOM.
- */
-export function BrandSeal({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "border-cacao text-cacao flex aspect-square flex-col items-center justify-center rounded-full border-2 text-center",
-        className,
-      )}
-      aria-hidden="true"
-    >
-      <span className="font-display text-[0.7em] font-extrabold leading-none">15</span>
-      <span className="mt-[0.15em] text-[0.28em] font-bold uppercase leading-[1.2] tracking-[0.12em]">
-        mini
-        <br />
-        cookie
-      </span>
-    </span>
-  );
-}

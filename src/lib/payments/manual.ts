@@ -16,9 +16,12 @@ export const manualProvider: PaymentProvider = {
     return {
       kind: "deferred" as const,
       reference: null,
+      // Nessuna promessa di invio: se la conferma sia partita o no lo sa
+      // l'ordine, e lo dice la pagina di conferma. Qui si descrive solo
+      // com'è fatto il pagamento.
       instructions:
-        `Ti abbiamo inviato il riepilogo dell'ordine ${order.number} via email. ` +
-        "Appena riceviamo il bonifico prepariamo la spedizione.",
+        `L'ordine ${order.number} resta da saldare tramite bonifico. ` +
+        "Appena lo riceviamo prepariamo la spedizione.",
     };
   },
 };

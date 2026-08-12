@@ -93,8 +93,8 @@ export default async function CheckoutPage({
                 ) : (
                   <>
                     Il pagamento con carta non è ancora attivo. Registriamo
-                    l&apos;ordine e ti inviamo per email i dati per il bonifico:
-                    prepariamo la spedizione appena lo riceviamo.
+                    l&apos;ordine come da saldare tramite bonifico e prepariamo la
+                    spedizione appena lo riceviamo.
                   </>
                 )}
               </p>

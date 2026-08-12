@@ -31,13 +31,6 @@ export const getFeaturedProduct = cache(async () => {
 
 export type FeaturedProduct = NonNullable<Awaited<ReturnType<typeof getFeaturedProduct>>>;
 
-export const getFlavors = cache(async () => {
-  return db.flavor.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
-  });
-});
-
 /** Recensioni pubblicate. Le demo restano incluse ma segnalate. */
 export const getPublishedReviews = cache(async (productId: string, take = 6) => {
   return db.review.findMany({
@@ -63,13 +56,6 @@ export const getRatingSummary = cache(async (productId: string) => {
 
   if (result._count === 0 || result._avg.rating === null) return null;
   return { average: result._avg.rating, count: result._count };
-});
-
-export const getFaqs = cache(async (group?: string) => {
-  return db.faqItem.findMany({
-    where: { isPublished: true, ...(group ? { group } : {}) },
-    orderBy: [{ group: "asc" }, { sortOrder: "asc" }],
-  });
 });
 
 export const getActiveShippingRate = cache(async () => {

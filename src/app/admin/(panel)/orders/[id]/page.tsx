@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderActions } from "@/components/admin/OrderActions";
+import { OrderEmailPanel } from "@/components/admin/OrderEmailPanel";
 import { PageHeader, Panel, StatusBadge } from "@/components/admin/ui";
 import { formatDate, formatPrice } from "@/lib/format";
 import { db } from "@/lib/db";
@@ -132,6 +133,15 @@ export default async function AdminOrderDetailPage({
               status={order.status}
               trackingCode={order.trackingCode}
               adminNote={order.adminNote}
+            />
+          </Panel>
+
+          <Panel title="Email di conferma">
+            <OrderEmailPanel
+              orderId={order.id}
+              email={order.email}
+              sentAt={order.confirmationEmailSentAt?.toISOString() ?? null}
+              error={order.confirmationEmailError}
             />
           </Panel>
 

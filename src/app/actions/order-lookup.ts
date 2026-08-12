@@ -57,7 +57,7 @@ export async function lookupOrder(_prev: LookupState, formData: FormData): Promi
   if (!order) {
     return {
       status: "error",
-      message: "Nessun ordine con questo numero e questa email. Controlla l'email di conferma.",
+      message: "Nessun ordine con questo numero e questa email. Controlla che siano gli stessi usati al momento dell'acquisto.",
     };
   }
 

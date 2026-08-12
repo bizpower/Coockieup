@@ -1,6 +1,7 @@
 import "server-only";
 import { BRAND_LEGAL, BRAND_NAME } from "@/config/brand";
 import { db } from "@/lib/db";
+import { isEmailConfigured } from "@/lib/email";
 import { isStripeConfigured } from "@/lib/payments";
 import { pendingPhotos } from "@/config/images";
 
@@ -33,6 +34,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     demoReviews,
     demoOrders,
     activeProducts,
+    ordersWithoutEmail,
   ] = await Promise.all([
     db.nutritionFact.count({ where: { isConfirmed: false } }),
     db.ingredient.count({ where: { isConfirmed: false } }),
@@ -42,6 +44,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     db.review.count({ where: { isDemo: true } }),
     db.order.count({ where: { isDemo: true } }),
     db.product.count({ where: { status: "ACTIVE" } }),
+    db.order.count({ where: { confirmationEmailSentAt: null, isDemo: false } }),
   ]);
 
   const labelData = unconfirmedNutrition + unconfirmedIngredients + unconfirmedAllergens;
@@ -106,6 +109,18 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
         : "Senza chiavi Stripe gli ordini nascono da saldare per bonifico. Il checkout funziona, ma non incassa online.",
       done: isStripeConfigured(),
       blocking: true,
+    },
+    {
+      id: "email",
+      label: "Configurare l'invio delle email",
+      detail: isEmailConfigured()
+        ? `Le conferme d'ordine partono tramite ${process.env.RESEND_API_KEY ? "Resend" : "Brevo"}.`
+        : ordersWithoutEmail > 0
+          ? `Nessun provider configurato: ${ordersWithoutEmail} ordini sono stati registrati senza email di conferma. Il sito lo dichiara al cliente invece di fingere.`
+          : "Nessun provider configurato: gli ordini verranno registrati senza email di conferma, e la pagina di conferma lo dirà al cliente.",
+      done: isEmailConfigured(),
+      blocking: true,
+      href: "/admin/orders",
     },
     {
       id: "photos",

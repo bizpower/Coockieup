@@ -24,8 +24,8 @@ export default function AccountPage() {
         <Eyebrow>Assistenza</Eyebrow>
         <h1 className="text-display mt-4">I miei ordini</h1>
         <p className="text-lead text-cacao-soft mt-5">
-          Nessun account da creare. Ti servono il numero d&apos;ordine e l&apos;email che
-          hai usato: li trovi nell&apos;email di conferma.
+          Nessun account da creare. Ti servono il numero d&apos;ordine e l&apos;email
+          che hai usato al momento dell&apos;acquisto.
         </p>
 
         <div className="mt-10">
@@ -33,7 +33,7 @@ export default function AccountPage() {
         </div>
 
         <p className="text-cacao-soft mt-12 text-sm leading-relaxed">
-          Non trovi l&apos;email di conferma? Scrivici a{" "}
+          Non trovi il numero d&apos;ordine? Scrivici a{" "}
           <a
             href={`mailto:${BRAND_LEGAL.supportEmail}`}
             className="hover:text-fiamma underline underline-offset-4"

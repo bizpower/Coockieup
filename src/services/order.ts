@@ -219,8 +219,16 @@ export async function markOrderPaid(orderNumber: string, paymentRef: string) {
   const order = await db.order.findUnique({ where: { number: orderNumber } });
   if (!order || order.paymentStatus === "PAID") return order;
 
-  return db.order.update({
+  const updated = await db.order.update({
     where: { id: order.id },
     data: { paymentStatus: "PAID", status: "PAID", paymentRef },
   });
+
+  // La conferma partita al checkout diceva "in attesa di pagamento": adesso
+  // che l'incasso è arrivato ne parte una che dice la cosa giusta. L'import
+  // è qui dentro per non creare un ciclo fra i due moduli.
+  const { sendOrderConfirmation } = await import("./order-email");
+  await sendOrderConfirmation(updated.id);
+
+  return updated;
 }

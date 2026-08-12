@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getPaymentProvider } from "@/lib/payments";
 import { clearCart, getOrCreateCart } from "@/services/cart";
 import { createOrder, getOrderByNumber } from "@/services/order";
+import { sendOrderConfirmation } from "@/services/order-email";
 
 /**
  * Conclusione dell'ordine.
@@ -91,6 +92,11 @@ export async function placeOrder(
 
   const result = await createOrder(cart.id, parsed.data, provider.id);
   if (!result.ok) return { status: "error", message: result.message, values: submitted };
+
+  // L'esito viene registrato sull'ordine, non ignorato: se l'email non parte,
+  // la pagina di conferma lo dice invece di promettere un messaggio che non
+  // arriverà mai. L'invio non può far fallire un ordine già scritto.
+  await sendOrderConfirmation(result.orderId);
 
   let destination = `/order-confirmation/${result.number}`;
 
