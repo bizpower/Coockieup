@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 
 /**
  * Confine di errore globale.
@@ -36,9 +36,9 @@ export default function GlobalError({
           <Button size="lg" onClick={reset}>
             Riprova
           </Button>
-          <Button size="lg" variant="outline" onClick={() => (window.location.href = "/")}>
+          <ButtonLink size="lg" variant="outline" href="/">
             Torna alla home
-          </Button>
+          </ButtonLink>
         </div>
 
         {error.digest && (

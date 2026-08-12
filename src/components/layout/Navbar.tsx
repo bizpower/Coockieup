@@ -21,9 +21,16 @@ import { cn } from "@/lib/utils";
  */
 export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
   const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { openCart } = useCartUI();
+
+  // Il pannello non memorizza "aperto", memorizza *su quale pagina* è stato
+  // aperto. Così al cambio di rotta si chiude da solo, senza un effetto che
+  // rimette a posto lo stato dopo aver già disegnato il menu aperto sopra la
+  // pagina nuova.
+  const [openedOn, setOpenedOn] = useState<string | null>(null);
+  const open = openedOn === pathname;
+  const setOpen = (next: boolean) => setOpenedOn(next ? pathname : null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -32,12 +39,9 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Cambio pagina: il pannello non deve restare aperto sotto la nuova rotta.
-  useEffect(() => setOpen(false), [pathname]);
-
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenedOn(null);
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
@@ -107,7 +111,7 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
 
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => setOpen(!open)}
             aria-expanded={open}
             aria-controls="menu-mobile"
             aria-label={open ? "Chiudi il menu" : "Apri il menu"}
