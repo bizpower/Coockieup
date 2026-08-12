@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyStripeSignature } from "@/lib/payments";
-import { markOrderPaid } from "@/services/order";
+import { cancelUnpaidOrder, markOrderPaid } from "@/services/order";
 
 /**
  * Webhook Stripe.
@@ -50,13 +50,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Corpo non leggibile." }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const orderNumber = session.client_reference_id ?? session.metadata?.order_number;
+  const session = event.data.object;
+  const orderNumber = session.client_reference_id ?? session.metadata?.order_number;
 
-    if (orderNumber) {
-      await markOrderPaid(orderNumber, session.payment_intent ?? session.id ?? "");
-    }
+  if (event.type === "checkout.session.completed" && orderNumber) {
+    await markOrderPaid(orderNumber, session.payment_intent ?? session.id ?? "");
+  }
+
+  // Sessione scaduta: il cliente ha aperto il pagamento e non l'ha concluso.
+  // Senza questo, la merce resterebbe impegnata per un ordine che non arriverà
+  // mai, e il magazzino si esaurirebbe senza una vendita.
+  if (event.type === "checkout.session.expired" && orderNumber) {
+    await cancelUnpaidOrder(orderNumber, "Sessione di pagamento scaduta.");
   }
 
   // Gli altri eventi vengono accettati senza azione: rispondere con un errore

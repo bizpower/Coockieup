@@ -10,9 +10,11 @@ import {
   Th,
 } from "@/components/admin/ui";
 import { RevenueChart } from "@/components/admin/RevenueChart";
+import { StaleStockNotice } from "@/components/admin/StaleStockNotice";
 import { formatDate, formatPrice } from "@/lib/format";
 import { db } from "@/lib/db";
 import { getDashboardStats, getRevenueSeries } from "@/services/stats";
+import { countStaleOrders } from "@/services/maintenance";
 
 export default async function AdminDashboardPage({
   searchParams,
@@ -22,7 +24,7 @@ export default async function AdminDashboardPage({
   const { demo } = await searchParams;
   const includeDemo = demo === "1";
 
-  const [stats, series, recentOrders] = await Promise.all([
+  const [stats, series, recentOrders, staleOrders] = await Promise.all([
     getDashboardStats({ includeDemo }),
     getRevenueSeries({ includeDemo }),
     db.order.findMany({
@@ -30,6 +32,7 @@ export default async function AdminDashboardPage({
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
+    countStaleOrders(),
   ]);
 
   return (
@@ -38,6 +41,8 @@ export default async function AdminDashboardPage({
         title="Dashboard"
         description="Ultimi 30 giorni. Il fatturato conta solo gli ordini effettivamente incassati."
       />
+
+      <StaleStockNotice count={staleOrders} />
 
       {stats.demoOrderCount > 0 && (
         <p className="border-warning bg-energy-wash text-cacao mb-6 flex flex-wrap items-center justify-between gap-3 border-l-4 px-4 py-3 text-sm font-medium">

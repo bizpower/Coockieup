@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { isEmailConfigured } from "@/lib/email";
 import { isStripeConfigured } from "@/lib/payments";
 import { pendingPhotos } from "@/config/images";
+import { countStaleOrders } from "./maintenance";
 
 /**
  * Checklist di lancio, calcolata sui dati veri.
@@ -35,6 +36,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     demoOrders,
     activeProducts,
     ordersWithoutEmail,
+    staleOrders,
   ] = await Promise.all([
     db.nutritionFact.count({ where: { isConfirmed: false } }),
     db.ingredient.count({ where: { isConfirmed: false } }),
@@ -45,6 +47,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     db.order.count({ where: { isDemo: true } }),
     db.product.count({ where: { status: "ACTIVE" } }),
     db.order.count({ where: { confirmationEmailSentAt: null, isDemo: false } }),
+    countStaleOrders(),
   ]);
 
   const labelData = unconfirmedNutrition + unconfirmedIngredients + unconfirmedAllergens;
@@ -121,6 +124,17 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       done: isEmailConfigured(),
       blocking: true,
       href: "/admin/orders",
+    },
+    {
+      id: "cron",
+      label: "Attivare la manutenzione notturna",
+      detail: process.env.CRON_SECRET
+        ? staleOrders > 0
+          ? `Configurata. Ci sono ${staleOrders} ordini non pagati oltre le 48 ore: verranno liberati alla prossima esecuzione.`
+          : "Configurata. Le scorte degli ordini abbandonati vengono liberate ogni notte."
+        : "CRON_SECRET non impostata: nessuno libera le scorte degli ordini mai pagati. Un checkout abbandonato tiene la merce bloccata a tempo indeterminato.",
+      done: Boolean(process.env.CRON_SECRET),
+      blocking: true,
     },
     {
       id: "photos",

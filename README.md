@@ -227,6 +227,14 @@ variabili d'ambiente, non un flag nel codice:
 3. Copia il *signing secret* dell'endpoint in `STRIPE_WEBHOOK_SECRET`.
 4. In locale: `stripe listen --forward-to localhost:3000/api/webhooks/stripe`.
 
+Sottoscrivi l'endpoint anche a **`checkout.session.expired`**: serve a
+liberare le scorte di chi apre il pagamento e non lo conclude.
+
+**Non serve creare prodotti o prezzi nel catalogo Stripe.** Le righe vengono
+inviate con `price_data`, cioè costruite al volo da quelle dell'ordine: il
+catalogo resta uno solo, quello del sito, e non c'è un secondo listino da
+tenere allineato quando cambi un prezzo dall'admin. Bastano le chiavi.
+
 L'integrazione usa l'API REST via `fetch` e `node:crypto`: nessun SDK da
 installare o aggiornare. La firma dei webhook è verificata con confronto a
 tempo costante e finestra di tolleranza di 5 minuti, quindi una richiesta
@@ -235,6 +243,82 @@ catturata non può essere riusata per dichiarare pagato un ordine.
 **Un ordine diventa pagato solo dal webhook**, mai dal ritorno del cliente sul
 sito: chi torna da Stripe può arrivare sulla conferma prima dell'incasso, e un
 redirect nel browser non è una prova di pagamento.
+
+---
+
+## Scorte e manutenzione notturna
+
+Lo stock viene scalato **quando l'ordine viene creato**, non quando il
+pagamento arriva. È l'unico modo per impedire che due persone comprino
+l'ultimo pezzo nello stesso istante — ma ha un rovescio: un checkout
+abbandonato (la scheda di Stripe chiusa senza pagare) terrebbe quella merce
+impegnata per sempre. Su qualche centinaio di pezzi e con i normali tassi di
+abbandono, in poche settimane il negozio risulterebbe esaurito senza aver
+venduto niente.
+
+Tre cose lo impediscono:
+
+1. **Webhook `checkout.session.expired`** — quando Stripe chiude una sessione
+   non conclusa, l'ordine viene annullato e la merce torna a scaffale.
+2. **`/api/cron/manutenzione`**, una volta al giorno — annulla gli ordini
+   rimasti da saldare oltre 48 ore, libera le scorte, elimina le visite più
+   vecchie di un anno e i carrelli fermi da due mesi. È la rete che funziona
+   anche se un webhook si perde, e l'unica che copre il pagamento per bonifico.
+3. **Avviso in dashboard** con un pulsante per liberarle subito, quando
+   qualcuno si accorge che un formato risulta esaurito e in magazzino c'è
+   ancora.
+
+Su Vercel il cron è già dichiarato in `vercel.json`; serve solo la variabile:
+
+```
+CRON_SECRET="..."          # openssl rand -base64 32
+```
+
+Altrove basta un cron di sistema:
+
+```
+0 4 * * * curl -s -H "Authorization: Bearer $CRON_SECRET" https://TUO-DOMINIO/api/cron/manutenzione
+```
+
+Nessun ordine **pagato** viene mai toccato, e ogni annullamento automatico
+lascia la motivazione nelle note interne dell'ordine.
+
+---
+
+## Email di conferma
+
+Quando qualcuno ordina parte una conferma con numero d'ordine, riepilogo e
+indirizzo di spedizione. Con Stripe ne parte una seconda quando l'incasso è
+confermato dal webhook: la prima diceva "in attesa di pagamento", la seconda
+dice la cosa giusta.
+
+Serve **`EMAIL_FROM`** più **una** chiave:
+
+```
+EMAIL_FROM="ordini@tuodominio.it"
+RESEND_API_KEY="re_..."     # oppure BREVO_API_KEY="..."
+```
+
+Il dominio del mittente va verificato presso il provider (record SPF e DKIM),
+altrimenti i messaggi finiscono nello spam o vengono rifiutati.
+
+### Senza provider configurato
+
+Il sito **non finge**. L'ordine viene registrato normalmente, ma:
+
+- la pagina di conferma scrive «Non ti abbiamo inviato un'email di conferma» e
+  indica come recuperare il riepilogo, invece di dire «ti abbiamo scritto»;
+- l'esito viene salvato sull'ordine (`confirmationEmailSentAt`), quindi
+  `/admin/orders/<id>` mostra se l'email è partita, quando, e se no perché;
+- da lì si rimanda con un clic, appena il provider è configurato;
+- la checklist di lancio segnala la voce come **bloccante**.
+
+In sviluppo il messaggio viene scritto per intero nel log del server: si può
+leggere il contenuto senza spedire niente.
+
+Aggiungere un terzo provider: una funzione in `src/lib/email/providers.ts` e
+una riga in `src/lib/email/index.ts`. Il resto del progetto conosce solo
+`sendEmail`.
 
 ---
 
@@ -285,7 +369,9 @@ Aggiungere un blocco di testo modificabile = aggiungere una voce a quel registro
 - [ ] Far redigere le cinque pagine legali
 - [ ] Sostituire le immagini vettoriali con le fotografie
 - [ ] Eliminare recensioni e ordini demo dall'admin
-- [ ] Configurare Stripe (chiavi + webhook)
+- [ ] Configurare Stripe (chiavi + webhook, incluso `checkout.session.expired`)
+- [ ] Configurare l'invio email (`EMAIL_FROM` + una chiave) e verificare SPF/DKIM
+- [ ] Impostare `CRON_SECRET` e verificare che la manutenzione notturna giri
 - [ ] Attivare o eliminare il coupon di esempio `BENVENUTO10` (creato disattivato)
 - [ ] Configurare il provider newsletter e gli analytics (Fase 5)
 - [ ] Portare `NEXT_PUBLIC_ALLOW_INDEXING` a `true`

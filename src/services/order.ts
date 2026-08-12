@@ -212,6 +212,42 @@ export async function getOrderByNumber(number: string) {
 }
 
 /**
+ * Annulla un ordine mai pagato e rimette a scaffale la merce.
+ *
+ * Idempotente e prudente: se nel frattempo il pagamento è arrivato, non tocca
+ * niente. Annullare un ordine incassato sarebbe molto peggio che lasciarne uno
+ * scaduto in giro.
+ */
+export async function cancelUnpaidOrder(orderNumber: string, reason: string) {
+  return db.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { number: orderNumber },
+      include: { items: true },
+    });
+
+    if (!order || order.status !== "PENDING" || order.paymentStatus !== "UNPAID") return null;
+
+    for (const item of order.items) {
+      if (!item.variantId) continue;
+      await tx.productVariant.update({
+        where: { id: item.variantId },
+        data: { stock: { increment: item.quantity } },
+      });
+    }
+
+    return tx.order.update({
+      where: { id: order.id },
+      data: {
+        status: "CANCELLED",
+        adminNote: [order.adminNote, `Annullato automaticamente: ${reason}`]
+          .filter(Boolean)
+          .join("\n"),
+      },
+    });
+  });
+}
+
+/**
  * Registra il pagamento riuscito. Idempotente: Stripe può recapitare lo stesso
  * evento più volte, e un doppio "pagato" non deve produrre effetti doppi.
  */

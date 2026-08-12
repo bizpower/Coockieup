@@ -216,3 +216,62 @@ variabile d'ambiente è valorizzata: nessun ID reale nel repository.
 | **6** | Mobile, performance, a11y, stati di caricamento/vuoto/errore, 404, UX checkout | ⏳ |
 
 A ogni fase il progetto deve compilare. Niente codice morto, niente sezioni non collegate.
+
+---
+
+## 9. Scostamenti dal piano, e perché
+
+Quattro cose sono uscite diverse da come erano previste in questo documento.
+
+**Stripe è stato integrato davvero, non predisposto.** Il piano prevedeva un
+adapter pronto e un provider stub. L'SDK ufficiale porta però un albero di
+dipendenze considerevole per fare due chiamate HTTP e una verifica di firma:
+con `fetch` e `node:crypto` l'integrazione è completa e reale, e non c'è un
+pacchetto in più da tenere aggiornato. Il provider `manual` resta ed è quello
+attivo finché non ci sono le chiavi.
+
+**Le email transazionali non erano nel piano, e mancavano.** Il sito scriveva
+"ti abbiamo scritto" senza che nessuna email partisse: una frase falsa nel
+momento più delicato della transazione. È stato aggiunto `src/lib/email/`
+(stesso approccio di Stripe: REST via `fetch`, nessun SDK) con una regola
+sopra le altre — **un provider non configurato non restituisce mai successo**.
+L'esito è salvato sull'ordine, il testo mostrato al cliente dipende da quel
+campo, e l'area amministrativa permette di rimandare.
+
+**Lo stock non aveva un percorso di rilascio.** Il piano diceva "verifica e
+decremento nella stessa transazione", ed era giusto per evitare la vendita
+doppia dell'ultimo pezzo. Mancava il rovescio: un ordine mai pagato teneva la
+merce impegnata a tempo indeterminato, e con i normali tassi di abbandono di un
+checkout il magazzino sarebbe andato a zero senza vendite. Ora la merce torna
+disponibile per tre strade — webhook di sessione scaduta, manutenzione
+notturna, pulsante in dashboard — e nessuna delle tre tocca mai un ordine
+pagato.
+
+**La lista delle cose da fare prima del lancio è diventata una pagina, non un
+capitolo di README.** Una lista scritta a mano invecchia il giorno dopo:
+`/admin/settings` interroga database e ambiente a ogni caricamento e si spunta
+da sola. Il README rimanda lì.
+
+---
+
+## 10. Quello che resta aperto
+
+Due limiti noti, entrambi documentati nel README e nessuno dei due un difetto
+del codice.
+
+**Le immagini caricate dall'admin vanno sul disco del server.** Su una
+piattaforma serverless quel disco è effimero e i file spariscono al rilancio.
+Il punto da cambiare è `src/app/api/media/upload/route.ts` e nient'altro: il
+resto del progetto conosce solo l'URL salvato in `Media.url`.
+
+**Manca il sistema di gestione del consenso ai cookie.** Gli analytics sono
+predisposti ma vanno caricati dopo l'accettazione, non al caricamento della
+pagina; finché nessun ID è configurato non parte comunque nessuno script di
+terze parti. Il punto in cui agganciarlo è `src/components/seo/Analytics.tsx`.
+
+**Il livello del carrello rende dinamiche tutte le rotte pubbliche.** Leggere
+il cookie del carrello nel layout serve ad avere il contatore già corretto
+nell'HTML servito, senza il salto da zero a tre dopo l'idratazione. Il costo è
+che nessuna pagina del negozio è statica. È la scelta giusta per un
+e-commerce; se il magazine dovesse crescere molto, la strada è spostare il
+carrello dietro un confine Suspense con il prerendering parziale.

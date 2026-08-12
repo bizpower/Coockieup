@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/guard";
 import { sendOrderConfirmation } from "@/services/order-email";
+import { releaseStaleOrders } from "@/services/maintenance";
 
 /**
  * Gestione ordini dall'area amministrativa.
@@ -98,6 +99,31 @@ export async function resendOrderConfirmation(orderId: string) {
 
   revalidatePath(`/admin/orders/${orderId}`);
   return { ok: result.sent, message: result.message };
+}
+
+/**
+ * Libera subito le scorte impegnate da ordini mai pagati.
+ *
+ * Normalmente lo fa la manutenzione notturna. Questo pulsante serve quando
+ * qualcuno si accorge che un formato risulta esaurito mentre in magazzino
+ * c'è ancora, e non vuole aspettare fino a domani.
+ */
+export async function releaseStaleStock() {
+  await requireAdmin();
+
+  const result = await releaseStaleOrders();
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/products");
+
+  return {
+    ok: true,
+    message:
+      result.released === 0
+        ? "Nessun ordine da liberare: tutte le scorte impegnate sono di ordini recenti."
+        : `${result.released} ordini annullati, ${result.units} pezzi rimessi a scaffale.`,
+  };
 }
 
 /** Elimina in blocco gli ordini di collaudo. Da usare prima dell'apertura. */
