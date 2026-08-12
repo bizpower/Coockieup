@@ -212,6 +212,47 @@ export async function getOrderByNumber(number: string) {
 }
 
 /**
+ * Restituisce tutto quello che la creazione dell'ordine aveva impegnato.
+ *
+ * Un ordine non prenota soltanto la merce: consuma anche un utilizzo del
+ * codice sconto. Finché queste due cose venivano disfatte a mano in tre punti
+ * diversi, il coupon veniva dimenticato ovunque — e un codice limitato a cento
+ * usi bruciava un uso a ogni carrello abbandonato, esaurendosi senza aver
+ * portato una vendita.
+ *
+ * Sta in una funzione sola perché è l'unico modo perché i tre chiamanti non
+ * tornino a divergere.
+ */
+export async function restoreOrderReservations(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+): Promise<{ units: number }> {
+  const items = await tx.orderItem.findMany({ where: { orderId } });
+
+  let units = 0;
+  for (const item of items) {
+    if (!item.variantId) continue;
+    await tx.productVariant.update({
+      where: { id: item.variantId },
+      data: { stock: { increment: item.quantity } },
+    });
+    units += item.quantity;
+  }
+
+  const order = await tx.order.findUnique({ where: { id: orderId } });
+  if (order?.couponCode) {
+    // `decrement` senza rete andrebbe sotto zero se qualcuno azzerasse il
+    // contatore a mano: si scende solo se c'è davvero qualcosa da restituire.
+    await tx.coupon.updateMany({
+      where: { code: order.couponCode, usedCount: { gt: 0 } },
+      data: { usedCount: { decrement: 1 } },
+    });
+  }
+
+  return { units };
+}
+
+/**
  * Annulla un ordine mai pagato e rimette a scaffale la merce.
  *
  * Idempotente e prudente: se nel frattempo il pagamento è arrivato, non tocca
@@ -227,13 +268,7 @@ export async function cancelUnpaidOrder(orderNumber: string, reason: string) {
 
     if (!order || order.status !== "PENDING" || order.paymentStatus !== "UNPAID") return null;
 
-    for (const item of order.items) {
-      if (!item.variantId) continue;
-      await tx.productVariant.update({
-        where: { id: item.variantId },
-        data: { stock: { increment: item.quantity } },
-      });
-    }
+    await restoreOrderReservations(tx, order.id);
 
     return tx.order.update({
       where: { id: order.id },

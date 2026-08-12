@@ -23,11 +23,12 @@ export function StaleStockNotice({ count }: { count: number }) {
       {count > 0 && (
         <p className="text-sm leading-relaxed font-medium">
           <strong>
-            {count} {count === 1 ? "ordine è rimasto" : "ordini sono rimasti"} da saldare da
-            più di 48 ore.
+            {count} {count === 1 ? "ordine ha superato" : "ordini hanno superato"} il tempo
+            massimo di attesa del pagamento.
           </strong>{" "}
           I pezzi restano impegnati e il magazzino risulta più vuoto di quello che è. La
-          manutenzione notturna li libera da sola; se serve subito, fallo qui.
+          manutenzione notturna li libera da sola; se serve subito, fallo qui. L&apos;attesa
+          è di 36 ore per la carta e di 10 giorni per il bonifico.
         </p>
       )}
 

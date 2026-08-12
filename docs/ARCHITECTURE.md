@@ -238,6 +238,15 @@ sopra le altre — **un provider non configurato non restituisce mai successo**.
 L'esito è salvato sull'ordine, il testo mostrato al cliente dipende da quel
 campo, e l'area amministrativa permette di rimandare.
 
+**Un ordine impegna due risorse, non una.** Oltre alla merce consuma un
+utilizzo del codice sconto, e il ripristino era scritto a mano in tre punti
+diversi che restituivano solo la prima. Ora esiste una funzione sola,
+`restoreOrderReservations`, che le disfa entrambe: è l'unico modo perché i tre
+chiamanti non tornino a divergere. Le attese prima di considerare perso un
+ordine sono diverse per metodo di pagamento — trentasei ore per la carta, dieci
+giorni per il bonifico — perché una soglia unica o tiene la merce ferma per
+niente o annulla ordini mentre i soldi sono in viaggio.
+
 **Lo stock non aveva un percorso di rilascio.** Il piano diceva "verifica e
 decremento nella stessa transazione", ed era giusto per evitare la vendita
 doppia dell'ultimo pezzo. Mancava il rovescio: un ordine mai pagato teneva la

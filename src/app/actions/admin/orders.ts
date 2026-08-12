@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/guard";
+import { restoreOrderReservations } from "@/services/order";
 import { sendOrderConfirmation } from "@/services/order-email";
 import { releaseStaleOrders } from "@/services/maintenance";
 
@@ -52,23 +53,18 @@ export async function updateOrderStatus(orderId: string, rawStatus: string) {
       },
     });
 
-    if (restocking) {
-      const items = await tx.orderItem.findMany({ where: { orderId } });
-      for (const item of items) {
-        if (item.variantId) {
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: { stock: { increment: item.quantity } },
-          });
-        }
-      }
-    }
+    if (restocking) await restoreOrderReservations(tx, orderId);
   });
 
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin");
-  return { ok: true, message: restocking ? "Stato aggiornato e scorte ripristinate." : "Stato aggiornato." };
+  return {
+    ok: true,
+    message: restocking
+      ? "Stato aggiornato: scorte e utilizzo del codice sconto ripristinati."
+      : "Stato aggiornato.",
+  };
 }
 
 export async function updateOrderNotes(orderId: string, formData: FormData) {

@@ -260,8 +260,8 @@ Tre cose lo impediscono:
 
 1. **Webhook `checkout.session.expired`** — quando Stripe chiude una sessione
    non conclusa, l'ordine viene annullato e la merce torna a scaffale.
-2. **`/api/cron/manutenzione`**, una volta al giorno — annulla gli ordini
-   rimasti da saldare oltre 48 ore, libera le scorte, elimina le visite più
+2. **`/api/cron/manutenzione`**, una volta al giorno — annulla gli ordini che
+   hanno superato il tempo di attesa, libera le scorte, elimina le visite più
    vecchie di un anno e i carrelli fermi da due mesi. È la rete che funziona
    anche se un webhook si perde, e l'unica che copre il pagamento per bonifico.
 3. **Avviso in dashboard** con un pulsante per liberarle subito, quando
@@ -280,8 +280,28 @@ Altrove basta un cron di sistema:
 0 4 * * * curl -s -H "Authorization: Bearer $CRON_SECRET" https://TUO-DOMINIO/api/cron/manutenzione
 ```
 
-Nessun ordine **pagato** viene mai toccato, e ogni annullamento automatico
-lascia la motivazione nelle note interne dell'ordine.
+### Quanto si aspetta
+
+L'attesa non è la stessa per tutti, perché i due casi non si somigliano:
+
+| Metodo | Attesa | Perché |
+|---|---|---|
+| Carta (Stripe) | 36 ore | Stripe fa scadere la sessione dopo 24 ore: oltre, il pagamento non può più arrivare. |
+| Bonifico | 10 giorni | Un ordine del venerdì sera con bonifico avviato lunedì arriva mercoledì. Annullarlo dopo due giorni cancellerebbe l'ordine di qualcuno mentre i suoi soldi sono in viaggio. |
+
+Le soglie stanno in `STALE_HOURS`, in `src/services/maintenance.ts`.
+
+### Cosa viene restituito
+
+Un ordine non impegna soltanto la merce: consuma anche **un utilizzo del codice
+sconto**. Annullamento manuale, scadenza della sessione e manutenzione notturna
+passano tutti dalla stessa funzione (`restoreOrderReservations`), che rimette a
+posto entrambe le cose. Erano tre percorsi separati, e tutti e tre si
+dimenticavano il coupon: un codice limitato a cento usi si sarebbe esaurito sui
+carrelli abbandonati senza portare una vendita.
+
+Nessun ordine **pagato** viene mai toccato dalla manutenzione, e ogni
+annullamento automatico lascia la motivazione nelle note interne dell'ordine.
 
 ---
 
