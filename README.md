@@ -28,19 +28,34 @@ Il blueprint completo è in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Guardarlo subito
 
-Un comando solo. Serve **Docker** (per il database) e **Node 20+**:
+Un comando solo. Serve **Node 20+** e un PostgreSQL, che il comando si procura
+da sé con Docker:
 
 ```bash
 npm install
 npm run demo
 ```
 
-Tira su un PostgreSQL, applica lo schema, popola catalogo, testi e articoli, e
-apre il sito su `http://localhost:3000`. L'amministrazione è su `/admin` con
+Applica lo schema, popola catalogo, testi e articoli, e apre il sito su
+`http://localhost:3000`. L'amministrazione è su `/admin` con
 `admin@example.com` / `cambiami-subito`.
+
+**Se Docker non ce l'hai** — o è installato ma non avviato — il comando te lo
+dice e si ferma senza fare danni. Puoi usare un PostgreSQL tuo: crea un file
+`.env` con dentro la riga
+
+```
+DATABASE_URL="postgresql://utente:password@127.0.0.1:5432/nomedb"
+```
+
+e rilancia `npm run demo`. Trovandosi un database già indicato, salta del tutto
+la parte con Docker e fa tutto il resto.
 
 Il pagamento non è collegato: gli ordini si registrano come da saldare, così il
 percorso d'acquisto si può provare fino in fondo senza conto Stripe.
+
+Se una pagina mostra «Ci siamo rotti noi», in sviluppo il riquadro in fondo
+dice la causa e cosa fare — quasi sempre è il database spento.
 
 ---
 
