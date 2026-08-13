@@ -1,5 +1,9 @@
 import { db } from "@/lib/db";
 import { destinazione } from "@/lib/storage";
+import {
+  indirizzoDatabase,
+  nomeVariabileDatabase,
+} from "../../config/database.mjs";
 
 /**
  * Perché il sito non parte: la risposta, calcolata sul posto.
@@ -29,13 +33,15 @@ export async function diagnostica(): Promise<Controllo[]> {
 
   // --- variabili d'ambiente --------------------------------------------------
 
-  const richieste = [
-    ["DATABASE_URL", "l'indirizzo del database"],
+  // L'indirizzo del database non si controlla per nome: le integrazioni del
+  // Marketplace di Vercel lo collegano con nomi diversi, e vanno bene tutti.
+  const assenti = [
     ["NEXT_PUBLIC_SITE_URL", "il dominio del sito"],
     ["AUTH_SECRET", "la chiave che firma le sessioni admin"],
-  ] as const;
+  ].filter(([nome]) => nome && !process.env[nome]);
 
-  const assenti = richieste.filter(([nome]) => !process.env[nome]);
+  if (!indirizzoDatabase())
+    assenti.unshift(["DATABASE_URL", "l'indirizzo del database"]);
 
   controlli.push({
     titolo: "Variabili d'ambiente",
@@ -78,13 +84,14 @@ export async function diagnostica(): Promise<Controllo[]> {
         : undefined,
   });
 
-  if (!process.env.DATABASE_URL) {
+  if (!indirizzoDatabase()) {
     controlli.push({
       titolo: "Database",
       esito: "manca",
-      dettaglio: "Senza DATABASE_URL non c'è niente da contattare.",
+      dettaglio:
+        "Nessun indirizzo configurato: né DATABASE_URL, né POSTGRES_PRISMA_URL, né POSTGRES_URL.",
       rimedio:
-        "Su Vercel: Storage → Create Database → Postgres. La variabile viene collegata da sola. Poi rifai il deploy.",
+        "Su Vercel: Storage → Create Database, e scegli un fornitore di Postgres dal Marketplace (Neon o Prisma Postgres). La variabile viene collegata da sola. Poi rifai il deploy.",
     });
     return controlli;
   }
@@ -96,14 +103,13 @@ export async function diagnostica(): Promise<Controllo[]> {
     controlli.push({
       titolo: "Database",
       esito: "ok",
-      dettaglio: "Raggiungibile e risponde.",
+      dettaglio: `Raggiungibile e risponde. Indirizzo preso da ${nomeVariabileDatabase()}.`,
     });
   } catch {
     controlli.push({
       titolo: "Database",
       esito: "manca",
-      dettaglio:
-        "DATABASE_URL è impostata ma il database non risponde: indirizzo sbagliato, credenziali sbagliate, o il server non raggiungibile da qui.",
+      dettaglio: `${nomeVariabileDatabase()} è impostata ma il database non risponde: indirizzo sbagliato, credenziali sbagliate, o il server non raggiungibile da qui.`,
       rimedio:
         "Controlla che la stringa sia quella del database di produzione e che accetti connessioni dall'esterno.",
     });

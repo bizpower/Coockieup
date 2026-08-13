@@ -160,16 +160,22 @@ specifico di una piattaforma.
 
 ### Su Vercel
 
-**1. Il database, prima di tutto.** Vercel non ne dà uno: va collegato.
-Storage → Create Database, oppure un Neon o un Supabase esterno. Quello che
-serve è la stringa di connessione.
+**1. Il database, prima di tutto.** Vercel **non ha più un Postgres suo**: la
+voce "Postgres" nel pannello non esiste, i database si prendono dal
+Marketplace. Nel progetto: **Storage → Create Database**, poi un fornitore di
+Postgres — **Neon** o **Prisma Postgres** vanno benissimo, hanno un piano
+gratuito. L'integrazione collega le variabili da sola.
 
-**2. Le variabili d'ambiente** (Settings → Environment Variables). Tre sono
-obbligatorie, senza una sola di queste il sito non parte:
+Il nome della variabile cambia da fornitore a fornitore, e il progetto ne
+accetta tre: `DATABASE_URL`, `POSTGRES_PRISMA_URL`, `POSTGRES_URL`. Non c'è
+niente da ricopiare a mano: se il fornitore ne collega una qualsiasi di queste,
+il sito la trova. La logica sta in `config/database.mjs`, ed è condivisa fra
+l'applicazione, il build e `npm run verifica`.
+
+**2. Le altre due variabili** (Settings → Environment Variables), obbligatorie:
 
 | Variabile | Valore |
 |---|---|
-| `DATABASE_URL` | la stringa del punto 1 |
 | `NEXT_PUBLIC_SITE_URL` | il dominio reale, senza barra finale |
 | `AUTH_SECRET` | generala con `openssl rand -base64 32` |
 

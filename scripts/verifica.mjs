@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync } from "node:fs";
+import {
+  indirizzoDatabase,
+  nomeVariabileDatabase,
+} from "../config/database.mjs";
 
 /**
  * Verifica dell'installazione: dice cosa manca, in ordine.
@@ -91,9 +95,12 @@ esito(
 
 // --- variabili obbligatorie --------------------------------------------------
 
-const mancanti = ["DATABASE_URL", "NEXT_PUBLIC_SITE_URL", "AUTH_SECRET"].filter(
+// L'indirizzo del database non si cerca per nome: le integrazioni di Vercel lo
+// collegano con nomi diversi e vanno bene tutti (vedi config/database.mjs).
+const mancanti = ["NEXT_PUBLIC_SITE_URL", "AUTH_SECRET"].filter(
   (nome) => !process.env[nome],
 );
+if (!indirizzoDatabase()) mancanti.unshift("DATABASE_URL");
 
 esito(
   mancanti.length === 0 ? OK : KO,
@@ -118,9 +125,11 @@ if (segreto && segreto.length < 32) {
   esito(OK, "AUTH_SECRET valida", null, null);
 }
 
-if (!process.env.DATABASE_URL) {
+const urlDatabase = indirizzoDatabase();
+
+if (!urlDatabase) {
   console.log(
-    "\x1b[1m\x1b[31mSenza DATABASE_URL non posso controllare il database. Mi fermo qui.\x1b[0m\n",
+    "\x1b[1m\x1b[31mSenza indirizzo del database non posso controllarlo. Mi fermo qui.\x1b[0m\n",
   );
   process.exit(1);
 }
@@ -128,12 +137,18 @@ if (!process.env.DATABASE_URL) {
 // --- database ----------------------------------------------------------------
 
 const { PrismaClient } = await import("@prisma/client");
-const db = new PrismaClient();
+const db = new PrismaClient({ datasourceUrl: urlDatabase });
 
 try {
   await db.$queryRaw`SELECT 1`;
-  const indirizzo = process.env.DATABASE_URL.replace(/:\/\/[^@]*@/, "://***@");
-  esito(OK, "Database raggiungibile", indirizzo, null);
+  // La password non si stampa mai: questo output finisce spesso incollato.
+  const indirizzo = urlDatabase.replace(/:\/\/[^@]*@/, "://***@");
+  esito(
+    OK,
+    `Database raggiungibile (da ${nomeVariabileDatabase()})`,
+    indirizzo,
+    null,
+  );
 } catch (errore) {
   esito(
     KO,
