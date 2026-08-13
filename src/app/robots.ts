@@ -25,7 +25,15 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         // Nessun valore SEO e, nel caso del carrello, contenuto personale.
-        disallow: ["/admin", "/api", "/cart", "/checkout", "/account", "/order-confirmation"],
+        disallow: [
+          "/admin",
+          "/api",
+          "/cart",
+          "/checkout",
+          "/account",
+          "/order-confirmation",
+          "/setup",
+        ],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

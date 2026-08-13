@@ -86,6 +86,18 @@ export default function GlobalError({
           </p>
         )}
 
+        {/* Chi gestisce il sito non ha i log sotto mano: ha questa pagina, che
+            dice la causa. Non rivela nessun valore, solo cosa manca. */}
+        <p className="text-cacao-soft mt-4 text-xs">
+          Gestisci tu questo sito?{" "}
+          <a
+            href="/setup"
+            className="hover:text-fiamma underline underline-offset-4"
+          >
+            Vedi cosa manca
+          </a>
+        </p>
+
         {IN_SVILUPPO && error.message && (
           <DettaglioSviluppo messaggio={error.message} />
         )}
