@@ -1,19 +1,20 @@
-import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import path from "node:path";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { slugify } from "@/lib/slug";
+import {
+  salvaFile,
+  StorageNonConfigurato,
+  StorageNonRisponde,
+} from "@/lib/storage";
 
 /**
  * Caricamento immagini.
  *
- * Scrive su disco in `public/uploads`. È la scelta giusta per un server
- * singolo o per lo sviluppo; su una piattaforma serverless il filesystem è
- * effimero e i file sparirebbero al primo rilancio. Il punto in cui passare a
- * uno storage a oggetti è questa funzione e nient'altro: il resto del progetto
- * conosce solo l'URL salvato in `Media.url`.
+ * Qui si controlla *cosa* può essere caricato — chi, che formato, quanto
+ * grande, con che nome. Dove il file finisca è un'altra questione, e sta in
+ * lib/storage: disco in locale, Vercel Blob in produzione.
  */
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -30,15 +31,20 @@ const ALLOWED = new Map([
 
 export async function POST(request: Request) {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Non autorizzato." }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Non autorizzato." }, { status: 401 });
 
   const formData = await request.formData();
   const file = formData.get("file");
   const alt = formData.get("alt")?.toString().trim() ?? "";
-  const folder = slugify(formData.get("folder")?.toString() ?? "generale") || "generale";
+  const folder =
+    slugify(formData.get("folder")?.toString() ?? "generale") || "generale";
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Nessun file ricevuto." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Nessun file ricevuto." },
+      { status: 400 },
+    );
   }
 
   const extension = ALLOWED.get(file.type);
@@ -61,14 +67,36 @@ export async function POST(request: Request) {
   const base = slugify(file.name.replace(/\.[^.]+$/, "")) || "immagine";
   const filename = `${base}-${randomUUID().slice(0, 8)}.${extension}`;
 
-  const directory = path.join(process.cwd(), "public", "uploads", folder);
-  await mkdir(directory, { recursive: true });
-  await writeFile(path.join(directory, filename), Buffer.from(await file.arrayBuffer()));
+  let salvato;
+  try {
+    salvato = await salvaFile(Buffer.from(await file.arrayBuffer()), {
+      cartella: folder,
+      nome: filename,
+      tipo: file.type,
+    });
+  } catch (errore) {
+    // Se lo storage non è a posto il record non va creato: rimanderebbe a un
+    // file che non esiste, e l'immagine comparirebbe rotta nella libreria.
+    if (errore instanceof StorageNonConfigurato) {
+      return NextResponse.json({ error: errore.message }, { status: 503 });
+    }
+    if (errore instanceof StorageNonRisponde) {
+      return NextResponse.json(
+        { error: `${errore.message} Riprova fra poco.` },
+        { status: 504 },
+      );
+    }
+    console.error("Caricamento fallito:", errore);
+    return NextResponse.json(
+      { error: "Il caricamento non è riuscito. Riprova." },
+      { status: 502 },
+    );
+  }
 
   const media = await db.media.create({
     data: {
       filename,
-      url: `/uploads/${folder}/${filename}`,
+      url: salvato.url,
       alt,
       mimeType: file.type,
       sizeBytes: file.size,

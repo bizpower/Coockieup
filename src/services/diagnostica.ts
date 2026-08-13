@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { destinazione } from "@/lib/storage";
 
 /**
  * Perché il sito non parte: la risposta, calcolata sul posto.
@@ -58,6 +59,24 @@ export async function diagnostica(): Promise<Controllo[]> {
       rimedio: "Generane una nuova con: openssl rand -base64 32",
     });
   }
+
+  // --- storage delle immagini ------------------------------------------------
+
+  const dove = destinazione();
+  controlli.push({
+    titolo: "Immagini caricate",
+    esito: dove === "non-configurato" ? "manca" : "ok",
+    dettaglio:
+      dove === "blob"
+        ? "Vercel Blob è collegato: le foto caricate dall'amministrazione restano al loro posto."
+        : dove === "disco"
+          ? "Salvate sul disco locale. Va bene qui; su una piattaforma serverless sparirebbero."
+          : "Il sito gira su Vercel senza Blob: il disco è effimero e le immagini caricate sparirebbero al primo rilancio. Il caricamento viene rifiutato invece di perdere i file in silenzio.",
+    rimedio:
+      dove === "non-configurato"
+        ? "Su Vercel: Storage → Create → Blob. La variabile BLOB_READ_WRITE_TOKEN viene collegata da sola, poi serve un nuovo deploy."
+        : undefined,
+  });
 
   if (!process.env.DATABASE_URL) {
     controlli.push({

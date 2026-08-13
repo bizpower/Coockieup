@@ -1,15 +1,17 @@
 "use server";
 
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/guard";
+import { eliminaFile } from "@/lib/storage";
 
 export type SaveResult = { ok: boolean; message: string };
 
 /** Il testo alternativo è modificabile dopo il caricamento: spesso si scrive meglio a mente fredda. */
-export async function updateMediaAlt(mediaId: string, alt: string): Promise<SaveResult> {
+export async function updateMediaAlt(
+  mediaId: string,
+  alt: string,
+): Promise<SaveResult> {
   await requireAdmin();
 
   await db.media.update({ where: { id: mediaId }, data: { alt: alt.trim() } });
@@ -39,13 +41,9 @@ export async function deleteMedia(mediaId: string): Promise<SaveResult> {
 
   await db.media.delete({ where: { id: mediaId } });
 
-  // Il file su disco è secondario rispetto al record: se manca o è già stato
-  // rimosso a mano, l'operazione deve comunque considerarsi riuscita.
-  try {
-    await unlink(path.join(process.cwd(), "public", media.url));
-  } catch {
-    // Il record è già andato: nulla da recuperare.
-  }
+  // Il file è secondario rispetto al record, e `eliminaFile` non solleva mai:
+  // un file orfano si ripulisce, un record rimasto lascia un'immagine rotta.
+  await eliminaFile(media.url);
 
   revalidatePath("/admin/media");
   return { ok: true, message: "Immagine eliminata." };

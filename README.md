@@ -199,13 +199,30 @@ per la manutenzione notturna e — solo al lancio vero —
 Se qualcosa non torna, `npm run verifica` con la `DATABASE_URL` di produzione
 dice quale dei punti qui sopra manca.
 
-### Una cosa da sistemare prima del traffico vero
+### Le immagini caricate
 
-Le immagini caricate dall'admin finiscono in `public/uploads`, sul disco del
-server. Su una piattaforma serverless quel disco è effimero: i file spariscono
-al rilancio. Il punto da cambiare è uno solo — `src/app/api/media/upload/route.ts` —
-sostituendo la scrittura su disco con Vercel Blob, S3 o equivalente. Il resto
-del progetto conosce solo l'URL salvato in `Media.url` e non va toccato.
+Vivono in `src/lib/storage`, che sceglie da sé dove scriverle:
+
+| Dove gira | Dove finiscono |
+|---|---|
+| In locale | `public/uploads`, sul disco |
+| Su Vercel con Blob | Vercel Blob (`BLOB_READ_WRITE_TOKEN`) |
+| Su Vercel senza Blob | **Da nessuna parte: il caricamento viene rifiutato** |
+
+L'ultima riga è la più importante. Su una piattaforma serverless il disco è
+effimero: scrivere lì riuscirebbe, e i file sparirebbero poche ore dopo senza
+un errore, lasciando articoli con le copertine rotte. Un caricamento che
+finisce bene e perde il file è peggio di un caricamento che fallisce, quindi in
+quel caso il sito si rifiuta di scrivere e dice come sistemare.
+
+Lo store si crea da **Storage → Create → Blob**: la variabile viene collegata
+da sola e serve un nuovo deploy. Aggiungere S3 domani significa aggiungere un
+ramo in quel file: il resto del progetto conosce solo l'URL in `Media.url`.
+
+Il caricamento ha un limite di venti secondi. Non è teoria: provato con la rete
+verso lo storage bloccata, l'`abortSignal` del client non basta — riprova da
+solo e la richiesta resta appesa oltre un minuto. Il limite è imposto sopra la
+libreria, quindi non dipende da come si comporta.
 
 ---
 

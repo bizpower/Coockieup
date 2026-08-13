@@ -4,9 +4,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],
-    // Le immagini del prodotto sono servite da /public finché non si passa a un CDN.
-    // Aggiungi qui l'host remoto quando le foto reali sostituiranno gli SVG.
-    remotePatterns: [],
+    remotePatterns: [
+      // Le immagini caricate dall'amministrazione, quando lo storage è Vercel
+      // Blob. Ogni store ha un sottodominio proprio, da cui il jolly: senza
+      // questa riga next/image rifiuterebbe di servirle.
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+    ],
   },
   experimental: {
     optimizePackageImports: ["clsx", "tailwind-merge"],
