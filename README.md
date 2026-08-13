@@ -101,7 +101,7 @@ docker run --name brand-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=brand \
 |---|---|
 | `npm run demo` | Database in Docker, schema, contenuti e sito, in un colpo solo |
 | `npm run dev` | Sviluppo |
-| `npm run build` | Client Prisma, migrazioni e compilazione |
+| `npm run build` | Client Prisma, migrazioni, contenuti al primo giro, compilazione |
 | `npm run typecheck` | TypeScript senza emettere |
 | `npm run lint` | eslint, preset di Next |
 | `npm run verifica` | Dice cosa manca perché il sito parta |
@@ -182,23 +182,23 @@ l'applicazione, il build e `npm run verifica`.
 Le altre (Stripe, email, cron, analytics) stanno in `.env.example` e si possono
 aggiungere dopo: senza, il sito funziona e lo dichiara.
 
-**3. Il deploy.** Lo schema del database viene applicato dal comando di build,
-quindi non c'è niente da lanciare a mano. Se `DATABASE_URL` manca o è
-sbagliata, il build **fallisce dicendolo** invece di pubblicare un sito che
-mostra un errore su ogni pagina.
+**3. Il deploy, e basta.** Non c'è nient'altro da lanciare a mano. Il comando di
+build applica lo schema e, **se il database è vuoto**, carica anche catalogo,
+testi, FAQ, pagine legali e articoli, e crea il primo utente amministratore.
+Dal secondo deploy in poi non tocca più i contenuti: il seed è idempotente, ma
+rilanciarlo riscriverebbe il copy modificato dall'amministrazione.
 
-**4. I contenuti.** Il database è vuoto: il sito si apre ma non ha catalogo. Dal
-tuo computer, una volta sola:
+Se non hai impostato `ADMIN_PASSWORD`, ne viene generata una casuale e stampata
+**nel registro del build** — che vede solo chi ha accesso al progetto. Copiala
+da lì al primo deploy: una password predefinita e nota su un sito pubblico è
+una porta aperta.
 
-```bash
-DATABASE_URL="...la stringa di produzione..." npm run db:seed
-```
+Se il database manca o non risponde, il build **fallisce dicendolo** invece di
+pubblicare un sito che mostra un errore su ogni pagina. Attenzione però: quando
+un build fallisce, Vercel continua a servire il deploy precedente — il sito
+sembra identico a prima. Guarda sempre se l'ultimo deploy è verde o rosso.
 
-Popola prodotto, varianti, testi, FAQ, pagine legali, articoli e crea il primo
-utente amministratore da `ADMIN_EMAIL` / `ADMIN_PASSWORD`. È idempotente: se lo
-rilanci non duplica niente.
-
-**5. Poi, quando servono:** il webhook Stripe sull'URL definitivo, `CRON_SECRET`
+**4. Poi, quando servono:** il webhook Stripe sull'URL definitivo, `CRON_SECRET`
 per la manutenzione notturna e — solo al lancio vero —
 `NEXT_PUBLIC_ALLOW_INDEXING="true"`.
 

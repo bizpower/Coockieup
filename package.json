@@ -6,7 +6,7 @@
     "demo": "node scripts/demo.mjs",
     "verifica": "node scripts/verifica.mjs",
     "dev": "next dev",
-    "build": "prisma generate && node scripts/migra.mjs && next build",
+    "build": "prisma generate && node scripts/prepara-db.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
