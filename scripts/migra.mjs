@@ -1,23 +1,28 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
 import {
-  indirizzoDatabase,
-  nomeVariabileDatabase,
+  indirizzoMigrazioni,
+  nomeVariabileMigrazioni,
 } from "../config/database.mjs";
 
 /**
  * Applica le migrazioni durante il build.
  *
- * Esiste per una ragione sola: `prisma migrate deploy` legge soltanto
- * `DATABASE_URL`, mentre le integrazioni del Marketplace di Vercel collegano
- * il database con nomi diversi. Senza questo passaggio, chi crea il database
- * da lì vedrebbe il build fallire con "Environment variable not found:
- * DATABASE_URL" pur avendone uno perfettamente funzionante.
+ * Esiste per due ragioni, e nessuna delle due è aggirabile.
  *
- * Qui l'indirizzo si risolve una volta e si passa a prisma come ambiente.
+ * La prima: `prisma migrate deploy` legge soltanto `DATABASE_URL`, mentre le
+ * integrazioni del Marketplace di Vercel collegano il database con nomi
+ * diversi. Senza questo passaggio il build fallirebbe con "Environment
+ * variable not found: DATABASE_URL" pur avendo un database funzionante.
+ *
+ * La seconda: le migrazioni vogliono una connessione **diretta**, non il pool.
+ * Neon e Supabase mettono davanti pgbouncer in modalità transazione, che non
+ * conserva la sessione fra un comando e l'altro; `migrate deploy` prende un
+ * lock consultivo e lo tiene, quindi sul pool si pianta. Qui si sceglie
+ * l'indirizzo giusto — vedi config/database.mjs.
  */
 
-const indirizzo = indirizzoDatabase();
+const indirizzo = indirizzoMigrazioni();
 
 if (!indirizzo) {
   console.error(`
@@ -33,7 +38,7 @@ if (!indirizzo) {
 }
 
 console.log(
-  `Database preso da ${nomeVariabileDatabase()}. Applico le migrazioni…`,
+  `Migrazioni: uso ${nomeVariabileMigrazioni()} (connessione diretta se disponibile).`,
 );
 
 try {
@@ -45,8 +50,15 @@ try {
   console.error(`
 \x1b[1m\x1b[31mLe migrazioni non sono state applicate.\x1b[0m
 
-  Il database risponde ma lo schema non si è potuto aggiornare. Controlla che
-  l'utente della stringa di connessione possa creare tabelle.
+  Due cause possibili, in ordine di probabilità:
+
+  1. L'indirizzo usato passa da un pool di connessioni. Le migrazioni hanno
+     bisogno di una connessione diretta. Neon la espone come
+     DATABASE_URL_UNPOOLED, altri come POSTGRES_URL_NON_POOLING: se il tuo
+     fornitore non ne collega nessuna, imposta DIRECT_URL a mano con la
+     stringa "diretta" o "non-pooled" del pannello del database.
+
+  2. L'utente della stringa di connessione non può creare tabelle.
 `);
   process.exit(1);
 }
