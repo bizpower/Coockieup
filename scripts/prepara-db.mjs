@@ -148,3 +148,79 @@ if (vuoto) {
 `);
   }
 }
+
+// --- l'utente amministratore ------------------------------------------------
+
+/**
+ * Crea l'accesso indicato in ADMIN_EMAIL, se non esiste.
+ *
+ * Serve quando il database e' gia' popolato — cioe' sempre, dopo il primo
+ * deploy — e occorre un accesso con un indirizzo diverso da quello iniziale.
+ * Senza questo, l'unico modo sarebbe una query a mano sul database.
+ *
+ * Due regole, ed entrambe sono di sicurezza.
+ *
+ * Un account che esiste **non viene mai toccato**: niente password
+ * riscritte a ogni deploy, altrimenti chi cambia la propria dall'interno se la
+ * ritroverebbe sostituita al rilascio successivo, e una variabile d'ambiente
+ * diventerebbe una scorciatoia permanente per entrare.
+ *
+ * Se la password non e' indicata ne viene generata una e stampata qui: il
+ * registro del build lo legge solo chi ha accesso al progetto, ed e' la stessa
+ * porta da cui si impostano le variabili. Chi puo' fare una cosa puo' gia'
+ * fare l'altra.
+ */
+async function assicuraAmministratore() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (!email) return;
+
+  const { PrismaClient: Client } = await import("@prisma/client");
+  const client = new Client({ datasourceUrl: indirizzoDatabase() });
+
+  try {
+    const esistente = await client.adminUser.findUnique({ where: { email } });
+    if (esistente) {
+      console.log(`Accesso ${email}: gia' presente, non lo tocco.`);
+      return;
+    }
+
+    const bcrypt = (await import("bcryptjs")).default;
+    const password =
+      process.env.ADMIN_PASSWORD || randomBytes(12).toString("base64url");
+
+    await client.adminUser.create({
+      data: {
+        email,
+        name: "Redazione",
+        role: "ADMIN",
+        passwordHash: await bcrypt.hash(password, 12),
+      },
+    });
+
+    console.log(`
+\x1b[1m\x1b[38;5;202m╭──────────────────────────────────────────────────────────────╮
+│  NUOVO ACCESSO ALL'AMMINISTRAZIONE                           │
+│  Questa riga compare una volta sola: copiala adesso.         │
+╰──────────────────────────────────────────────────────────────╯\x1b[0m
+
+  Indirizzo   /admin
+  Email       ${email}
+  Password    ${password}
+
+  Cambiala dopo il primo accesso da /admin/profilo.
+`);
+  } catch (errore) {
+    // Un accesso non creato non giustifica un deploy fallito: il sito parte
+    // comunque e si riprova al rilascio successivo.
+    console.warn(
+      "Non sono riuscito a preparare l'accesso amministratore:",
+      errore instanceof Error
+        ? errore.message.split("\n").find(Boolean)
+        : errore,
+    );
+  } finally {
+    await client.$disconnect();
+  }
+}
+
+await assicuraAmministratore();

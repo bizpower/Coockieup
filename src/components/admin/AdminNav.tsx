@@ -41,16 +41,25 @@ const SECTIONS = [
     title: "Sistema",
     items: [
       { href: "/admin/newsletter", label: "Newsletter" },
+      { href: "/admin/profilo", label: "Il tuo accesso" },
       { href: "/admin/settings", label: "Impostazioni" },
     ],
   },
 ] as const;
 
 function isActive(pathname: string, href: string, exact?: boolean) {
-  return exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  return exact
+    ? pathname === href
+    : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AdminNav({ userName, userRole }: { userName: string; userRole: string }) {
+export function AdminNav({
+  userName,
+  userRole,
+}: {
+  userName: string;
+  userRole: string;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -61,7 +70,11 @@ export function AdminNav({ userName, userRole }: { userName: string; userRole: s
           <p className="eyebrow text-panna/40 px-3">{section.title}</p>
           <ul className="mt-2 space-y-0.5">
             {section.items.map((item) => {
-              const active = isActive(pathname, item.href, "exact" in item ? item.exact : false);
+              const active = isActive(
+                pathname,
+                item.href,
+                "exact" in item ? item.exact : false,
+              );
               return (
                 <li key={item.href}>
                   <Link
@@ -99,7 +112,11 @@ export function AdminNav({ userName, userRole }: { userName: string; userRole: s
           aria-label={open ? "Chiudi il menu" : "Apri il menu"}
           className="hover:bg-panna/10 flex h-10 w-10 items-center justify-center rounded-lg"
         >
-          {open ? <CloseIcon className="text-xl" /> : <MenuIcon className="text-xl" />}
+          {open ? (
+            <CloseIcon className="text-xl" />
+          ) : (
+            <MenuIcon className="text-xl" />
+          )}
         </button>
       </div>
 
@@ -112,16 +129,23 @@ export function AdminNav({ userName, userRole }: { userName: string; userRole: s
       >
         <div className="mb-8 hidden px-3 pt-3 lg:block">
           <Logo size="md" inverted />
-          <p className="text-panna/40 mt-1 text-xs font-semibold">Amministrazione</p>
+          <p className="text-panna/40 mt-1 text-xs font-semibold">
+            Amministrazione
+          </p>
         </div>
 
-        <nav aria-label="Sezioni amministrative" className="flex-1 overflow-y-auto">
+        <nav
+          aria-label="Sezioni amministrative"
+          className="flex-1 overflow-y-auto"
+        >
           {nav}
         </nav>
 
         <div className="border-panna/15 mt-4 border-t px-3 pt-4">
           <p className="truncate text-sm font-semibold">{userName}</p>
-          <p className="text-panna/40 text-xs">{userRole === "ADMIN" ? "Amministratore" : "Redazione"}</p>
+          <p className="text-panna/40 text-xs">
+            {userRole === "ADMIN" ? "Amministratore" : "Redazione"}
+          </p>
 
           <div className="mt-3 flex flex-wrap gap-3">
             <Link
