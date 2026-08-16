@@ -506,27 +506,25 @@ async function seedPartners() {
   const existing = await db.retailPartner.findFirst();
   if (existing) return;
 
-  // Nasce NON confermata, quindi il sito pubblico non la mostra.
+  // Nome, citta' e sito sono quelli dichiarati dall'attivita' stessa.
   //
-  // Il fatto - "ci vendono" - lo sa solo chi gestisce il brand, e non e' una
-  // cosa che si possa dedurre da qui. I dati dell'attivita' poi sono suoi:
-  // nome esatto, indirizzo, riferimenti. Scriverli a caso manderebbe un
-  // cliente a vuoto e metterebbe in mezzo un negozio che non ha mai detto
-  // niente. Si completano dall'amministrazione e si spunta "confermato": da
-  // quel momento compare in home.
+  // `address` resta vuoto di proposito: la via non e' stata verificata, e un
+  // indirizzo sbagliato manda un cliente a vuoto e mette in mezzo un negozio
+  // che non ha mai detto niente. Il campo e' facoltativo e la scheda funziona
+  // benissimo senza: si aggiunge dall'amministrazione quando la via e' certa.
   await db.retailPartner.create({
     data: {
       name: "I Ragazzi della Frutta",
-      city: "[CITTA DA CONFERMARE]",
+      city: "Como centro",
       address: null,
-      url: null,
-      note: "Frutta fresca e frutta a cono. I nostri mini cookie sono sul bancone accanto alla cassa.",
-      isConfirmed: false,
+      url: "https://iragazzidellafrutta.it/",
+      note: "Frutta e verdura fresca, mozzarella di bufala e frutta a cono, in centro a Como.",
+      isConfirmed: true,
       isPublished: true,
       sortOrder: 0,
     },
   });
-  console.log("  punti vendita: 1 (da confermare)");
+  console.log("  punti vendita: I Ragazzi della Frutta (Como)");
 }
 
 async function seedShipping() {
