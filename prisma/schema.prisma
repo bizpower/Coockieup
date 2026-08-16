@@ -88,13 +88,13 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  variants   ProductVariant[]
-  images     ProductImage[]
-  flavors    Flavor[]         @relation("ProductFlavors")
-  nutrition  NutritionFact[]
+  variants    ProductVariant[]
+  images      ProductImage[]
+  flavors     Flavor[]         @relation("ProductFlavors")
+  nutrition   NutritionFact[]
   ingredients Ingredient[]
-  allergens  Allergen[]
-  reviews    Review[]
+  allergens   Allergen[]
+  reviews     Review[]
 
   @@index([status, sortOrder])
 }
@@ -334,16 +334,16 @@ enum PaymentStatus {
 }
 
 model Order {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   /// Numero leggibile mostrato al cliente, es. SG-2026-0001.
-  number     String @unique
+  number     String  @unique
   customerId String?
   email      String
 
-  status        OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(UNPAID)
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
   /// "manual" finché Stripe non è configurato, poi "stripe".
-  paymentProvider String      @default("manual")
+  paymentProvider String        @default("manual")
   /// Id della sessione o del payment intent del provider.
   paymentRef      String?
 
@@ -353,15 +353,15 @@ model Order {
   taxCents      Int @default(0)
   totalCents    Int
 
-  couponCode   String?
-  shippingName String
-  shippingLine1 String
-  shippingLine2 String?
-  shippingCity String
-  shippingZip  String
-  shippingState String?
-  shippingCountry String @default("IT")
-  shippingPhone String?
+  couponCode      String?
+  shippingName    String
+  shippingLine1   String
+  shippingLine2   String?
+  shippingCity    String
+  shippingZip     String
+  shippingState   String?
+  shippingCountry String  @default("IT")
+  shippingPhone   String?
 
   customerNote String?
   adminNote    String?
@@ -388,7 +388,7 @@ model Order {
 }
 
 model OrderItem {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   orderId   String
   variantId String?
 
@@ -543,4 +543,34 @@ model PageView {
 
   @@index([path, createdAt])
   @@index([createdAt])
+}
+
+// --- Punti vendita -----------------------------------------------------------
+
+/// Dove si trovano i biscotti fuori dal sito.
+///
+/// Sono attività di terzi: il nome, l'indirizzo e i riferimenti appartengono a
+/// loro, non a noi. `isConfirmed` vale qui come per i dati di etichetta —
+/// finché è false la scheda è un appunto interno e il sito pubblico non la
+/// mostra. Dichiarare che un negozio ci vende senza esserne certi è un danno
+/// per due: per chi ci va e non trova niente, e per il negozio.
+model RetailPartner {
+  id      String  @id @default(cuid())
+  name    String
+  /// Città o zona, come la direbbe un cliente.
+  city    String
+  address String?
+  /// Sito, pagina social o mappa: un solo riferimento, quello che usano loro.
+  url     String?
+  /// Una riga sul perché di questa collaborazione.
+  note    String?
+
+  isConfirmed Boolean @default(false)
+  isPublished Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isPublished, sortOrder])
 }

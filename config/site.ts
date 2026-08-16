@@ -24,6 +24,10 @@ export const SITE_TITLE_TEMPLATE = `%s · ${BRAND_NAME}`;
 export const SITE_DEFAULT_TITLE = `${BRAND_NAME} — ${BRAND_TAGLINE}`;
 
 export const MAIN_NAV = [
+  // Il logo riporta alla home, ma è una convenzione che non tutti danno per
+  // scontata su un sito che vedono per la prima volta. La voce esplicita
+  // costa uno spazio e toglie un dubbio.
+  { label: "Home", href: "/" },
   { label: "Shop", href: "/shop" },
   { label: "Il nostro biscotto", href: "/il-nostro-biscotto" },
   { label: "Ingredienti", href: "/ingredienti" },

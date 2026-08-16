@@ -73,6 +73,26 @@ const socialProof = z.object({
   title: z.string(),
 });
 
+/**
+ * Le sezioni della home che accompagnano verso una pagina interna.
+ *
+ * Hanno tutte la stessa forma perché fanno tutte la stessa cosa: dire di cosa
+ * parla una pagina e invitare ad aprirla. Un solo schema evita che ognuna
+ * inventi campi suoi.
+ */
+const teaser = z.object({
+  eyebrow: z.string(),
+  title: z.string(),
+  body: z.string(),
+  ctaLabel: z.string(),
+});
+
+const retail = z.object({
+  eyebrow: z.string(),
+  title: z.string(),
+  body: z.string(),
+});
+
 export const REGISTRY = {
   announcement: {
     label: "Barra annunci",
@@ -181,6 +201,38 @@ export const REGISTRY = {
     default: {
       eyebrow: "Dicono di noi",
       title: "Le prime opinioni.",
+    },
+  },
+  storyTeaser: {
+    label: "Rimando — Il nostro biscotto",
+    group: "home",
+    schema: teaser,
+    default: {
+      eyebrow: "La storia",
+      title: "Perché un cuore, un fulmine e un'ampolla.",
+      body: "Nei videogiochi il cuore è una vita in più, il fulmine è la corsa, l'ampolla è quella cosa che ti rimette in piedi. Sono i tre momenti in cui, nella vita vera, apriresti un cassetto a cercare qualcosa da mangiare. Da lì siamo partiti — e da lì è venuto anche il nome.",
+      ctaLabel: "Come è fatto il nostro biscotto",
+    },
+  },
+  magazineTeaser: {
+    label: "Rimando — Magazine",
+    group: "home",
+    schema: teaser,
+    default: {
+      eyebrow: "Magazine",
+      title: "Scriviamo anche quando non vendiamo.",
+      body: "Proteine, snack, formati, etichette da saper leggere. Articoli veri, senza il tono da integratore e senza promesse che non possiamo mantenere.",
+      ctaLabel: "Leggi il magazine",
+    },
+  },
+  retail: {
+    label: "Punti vendita — titoli",
+    group: "home",
+    schema: retail,
+    default: {
+      eyebrow: "Dove trovarci",
+      title: "Non solo qui.",
+      body: "Il modo più veloce per assaggiarli è ordinarli. Ma se ti capita di passare da uno di questi posti, sono già lì.",
     },
   },
   newsletter: {

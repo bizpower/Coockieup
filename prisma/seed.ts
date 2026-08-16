@@ -166,29 +166,95 @@ async function seedProduct() {
 
   // Valori di lavoro, non validati. Il badge "DA CONFERMARE" li accompagna ovunque.
   const nutrition = [
-    { key: "protein", label: "Proteine", value: "12", unit: "g", isHighlight: true, sortOrder: 0 },
-    { key: "fibre", label: "Fibre", value: "6", unit: "g", isHighlight: true, sortOrder: 1 },
-    { key: "energy_kcal", label: "Energia", value: "410", unit: "kcal", isHighlight: false, sortOrder: 2 },
-    { key: "carbs", label: "Carboidrati", value: "48", unit: "g", isHighlight: false, sortOrder: 3 },
-    { key: "sugars", label: "di cui zuccheri", value: "9", unit: "g", isHighlight: false, sortOrder: 4 },
-    { key: "fat", label: "Grassi", value: "16", unit: "g", isHighlight: false, sortOrder: 5 },
-    { key: "salt", label: "Sale", value: "0,4", unit: "g", isHighlight: false, sortOrder: 6 },
+    {
+      key: "protein",
+      label: "Proteine",
+      value: "12",
+      unit: "g",
+      isHighlight: true,
+      sortOrder: 0,
+    },
+    {
+      key: "fibre",
+      label: "Fibre",
+      value: "6",
+      unit: "g",
+      isHighlight: true,
+      sortOrder: 1,
+    },
+    {
+      key: "energy_kcal",
+      label: "Energia",
+      value: "410",
+      unit: "kcal",
+      isHighlight: false,
+      sortOrder: 2,
+    },
+    {
+      key: "carbs",
+      label: "Carboidrati",
+      value: "48",
+      unit: "g",
+      isHighlight: false,
+      sortOrder: 3,
+    },
+    {
+      key: "sugars",
+      label: "di cui zuccheri",
+      value: "9",
+      unit: "g",
+      isHighlight: false,
+      sortOrder: 4,
+    },
+    {
+      key: "fat",
+      label: "Grassi",
+      value: "16",
+      unit: "g",
+      isHighlight: false,
+      sortOrder: 5,
+    },
+    {
+      key: "salt",
+      label: "Sale",
+      value: "0,4",
+      unit: "g",
+      isHighlight: false,
+      sortOrder: 6,
+    },
   ];
 
   for (const fact of nutrition) {
     await db.nutritionFact.upsert({
       where: { productId_key: { productId: product.id, key: fact.key } },
       update: {},
-      create: { ...fact, productId: product.id, basis: "per 100 g", isConfirmed: false },
+      create: {
+        ...fact,
+        productId: product.id,
+        basis: "per 100 g",
+        isConfirmed: false,
+      },
     });
   }
 
   const ingredients = [
-    { name: "Farina d'avena", note: "La base. Da qui arrivano le fibre.", sortOrder: 0 },
+    {
+      name: "Farina d'avena",
+      note: "La base. Da qui arrivano le fibre.",
+      sortOrder: 0,
+    },
     { name: "Proteine del siero del latte", note: null, sortOrder: 1 },
-    { name: "Cioccolato fondente", note: "In gocce, non in copertura.", sortOrder: 2 },
+    {
+      name: "Cioccolato fondente",
+      note: "In gocce, non in copertura.",
+      sortOrder: 2,
+    },
     { name: "Burro di arachidi", note: "Solo nel Peanut Choc.", sortOrder: 3 },
-    { name: "Cacao magro in polvere", note: "Solo nel Double Choc.", sortOrder: 4 },
+    {
+      name: "Cacao magro in polvere",
+      note: "Solo nel Double Choc.",
+      sortOrder: 4,
+    },
     { name: "Mandorle", note: null, sortOrder: 5 },
     { name: "Uova", note: null, sortOrder: 6 },
     { name: "Agente lievitante", note: null, sortOrder: 7 },
@@ -196,7 +262,11 @@ async function seedProduct() {
 
   if ((await db.ingredient.count({ where: { productId: product.id } })) === 0) {
     await db.ingredient.createMany({
-      data: ingredients.map((i) => ({ ...i, productId: product.id, isConfirmed: false })),
+      data: ingredients.map((i) => ({
+        ...i,
+        productId: product.id,
+        isConfirmed: false,
+      })),
     });
   }
 
@@ -211,7 +281,11 @@ async function seedProduct() {
 
   if ((await db.allergen.count({ where: { productId: product.id } })) === 0) {
     await db.allergen.createMany({
-      data: allergens.map((a) => ({ ...a, productId: product.id, isConfirmed: false })),
+      data: allergens.map((a) => ({
+        ...a,
+        productId: product.id,
+        isConfirmed: false,
+      })),
     });
   }
 
@@ -240,7 +314,12 @@ async function seedProduct() {
 
   if ((await db.review.count({ where: { productId: product.id } })) === 0) {
     await db.review.createMany({
-      data: reviews.map((r) => ({ ...r, productId: product.id, isPublished: true, isDemo: true })),
+      data: reviews.map((r) => ({
+        ...r,
+        productId: product.id,
+        isPublished: true,
+        isDemo: true,
+      })),
     });
   }
 
@@ -316,19 +395,57 @@ const FAQS = [
 
 async function seedFaqs() {
   for (const faq of FAQS) {
-    const existing = await db.faqItem.findFirst({ where: { question: faq.question } });
+    const existing = await db.faqItem.findFirst({
+      where: { question: faq.question },
+    });
     if (!existing) await db.faqItem.create({ data: faq });
   }
   console.log(`  faq: ${FAQS.length}`);
 }
 
 const CATEGORIES = [
-  { slug: "food", name: "Food", colorHex: "#FF4B26", sortOrder: 0, description: "Ricette, abbinamenti e cose da mangiare." },
-  { slug: "proteine", name: "Proteine", colorHex: "#E23D2E", sortOrder: 1, description: "Come funzionano davvero, senza slogan." },
-  { slug: "benessere", name: "Benessere", colorHex: "#1F7A4D", sortOrder: 2, description: "Abitudini che reggono più di una settimana." },
-  { slug: "fitness", name: "Fitness", colorHex: "#F5C518", sortOrder: 3, description: "Allenamento e alimentazione, per chi si allena e per chi no." },
-  { slug: "nutrizione", name: "Nutrizione", colorHex: "#C98A3F", sortOrder: 4, description: "Etichette, macro e leggende da sfatare." },
-  { slug: "lifestyle", name: "Lifestyle", colorHex: "#6B5445", sortOrder: 5, description: "Il resto della giornata." },
+  {
+    slug: "food",
+    name: "Food",
+    colorHex: "#FF4B26",
+    sortOrder: 0,
+    description: "Ricette, abbinamenti e cose da mangiare.",
+  },
+  {
+    slug: "proteine",
+    name: "Proteine",
+    colorHex: "#E23D2E",
+    sortOrder: 1,
+    description: "Come funzionano davvero, senza slogan.",
+  },
+  {
+    slug: "benessere",
+    name: "Benessere",
+    colorHex: "#1F7A4D",
+    sortOrder: 2,
+    description: "Abitudini che reggono più di una settimana.",
+  },
+  {
+    slug: "fitness",
+    name: "Fitness",
+    colorHex: "#F5C518",
+    sortOrder: 3,
+    description: "Allenamento e alimentazione, per chi si allena e per chi no.",
+  },
+  {
+    slug: "nutrizione",
+    name: "Nutrizione",
+    colorHex: "#C98A3F",
+    sortOrder: 4,
+    description: "Etichette, macro e leggende da sfatare.",
+  },
+  {
+    slug: "lifestyle",
+    name: "Lifestyle",
+    colorHex: "#6B5445",
+    sortOrder: 5,
+    description: "Il resto della giornata.",
+  },
 ];
 
 async function seedCategories() {
@@ -368,7 +485,9 @@ async function seedLegalPages() {
 async function seedCoupon() {
   // Volutamente disattivato: un codice sconto vivo per sbaglio il giorno del
   // lancio si paga in denaro. Si attiva dall'admin quando serve davvero.
-  const existing = await db.coupon.findUnique({ where: { code: "BENVENUTO10" } });
+  const existing = await db.coupon.findUnique({
+    where: { code: "BENVENUTO10" },
+  });
   if (existing) return;
 
   await db.coupon.create({
@@ -381,6 +500,33 @@ async function seedCoupon() {
     },
   });
   console.log("  coupon: BENVENUTO10 (disattivato)");
+}
+
+async function seedPartners() {
+  const existing = await db.retailPartner.findFirst();
+  if (existing) return;
+
+  // Nasce NON confermata, quindi il sito pubblico non la mostra.
+  //
+  // Il fatto - "ci vendono" - lo sa solo chi gestisce il brand, e non e' una
+  // cosa che si possa dedurre da qui. I dati dell'attivita' poi sono suoi:
+  // nome esatto, indirizzo, riferimenti. Scriverli a caso manderebbe un
+  // cliente a vuoto e metterebbe in mezzo un negozio che non ha mai detto
+  // niente. Si completano dall'amministrazione e si spunta "confermato": da
+  // quel momento compare in home.
+  await db.retailPartner.create({
+    data: {
+      name: "I Ragazzi della Frutta",
+      city: "[CITTA DA CONFERMARE]",
+      address: null,
+      url: null,
+      note: "Frutta fresca e frutta a cono. I nostri mini cookie sono sul bancone accanto alla cassa.",
+      isConfirmed: false,
+      isPublished: true,
+      sortOrder: 0,
+    },
+  });
+  console.log("  punti vendita: 1 (da confermare)");
 }
 
 async function seedShipping() {
@@ -411,6 +557,7 @@ async function main() {
   await seedLegalPages();
   await seedCoupon();
   await seedShipping();
+  await seedPartners();
   await seedPosts(db);
   console.log("Fatto.");
 }

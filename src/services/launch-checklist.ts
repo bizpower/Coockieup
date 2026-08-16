@@ -37,6 +37,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     activeProducts,
     ordersWithoutEmail,
     staleOrders,
+    unconfirmedPartners,
   ] = await Promise.all([
     db.nutritionFact.count({ where: { isConfirmed: false } }),
     db.ingredient.count({ where: { isConfirmed: false } }),
@@ -48,9 +49,11 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     db.product.count({ where: { status: "ACTIVE" } }),
     db.order.count({ where: { confirmationEmailSentAt: null, isDemo: false } }),
     countStaleOrders(),
+    db.retailPartner.count({ where: { isConfirmed: false } }),
   ]);
 
-  const labelData = unconfirmedNutrition + unconfirmedIngredients + unconfirmedAllergens;
+  const labelData =
+    unconfirmedNutrition + unconfirmedIngredients + unconfirmedAllergens;
   const photosMissing = pendingPhotos().length;
   const socialPending = pendingSocial();
 
@@ -69,6 +72,21 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
           : `${socialPending.join(", ")}: il link porta alla home della piattaforma, non a un profilo. Si cambia da config/brand.ts.`,
       done: socialPending.length === 0,
       blocking: false,
+    },
+    {
+      // Non è bloccante come l'etichetta, ma è dello stesso tipo: un dato
+      // dichiarato al pubblico che riguarda qualcun altro. Un negozio elencato
+      // per sbaglio manda un cliente a vuoto e mette in mezzo chi non ha mai
+      // detto niente.
+      id: "partners",
+      label: "Confermare i punti vendita",
+      detail:
+        unconfirmedPartners === 0
+          ? "Tutte le schede dei punti vendita sono confermate."
+          : `${unconfirmedPartners} ${unconfirmedPartners === 1 ? "scheda è" : "schede sono"} in bozza e non ${unconfirmedPartners === 1 ? "compare" : "compaiono"} sul sito. Vanno completate con i dati veri dell'attività e spuntate.`,
+      done: unconfirmedPartners === 0,
+      blocking: false,
+      href: "/admin/punti-vendita",
     },
     {
       id: "label",
@@ -106,10 +124,9 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     {
       id: "company",
       label: "Inserire i dati societari",
-      detail:
-        BRAND_LEGAL.companyName.startsWith("[")
-          ? "Ragione sociale, partita IVA e sede sono ancora segnaposto in config/brand.ts. Compaiono nel footer di ogni pagina."
-          : `Registrati come ${BRAND_LEGAL.companyName}.`,
+      detail: BRAND_LEGAL.companyName.startsWith("[")
+        ? "Ragione sociale, partita IVA e sede sono ancora segnaposto in config/brand.ts. Compaiono nel footer di ogni pagina."
+        : `Registrati come ${BRAND_LEGAL.companyName}.`,
       done: !BRAND_LEGAL.companyName.startsWith("["),
       blocking: true,
     },
@@ -183,7 +200,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       detail:
         process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true"
           ? "Il sito è indicizzabile."
-          : "Il sito chiede ai motori di non indicizzare. Va portato NEXT_PUBLIC_ALLOW_INDEXING a \"true\" solo al lancio: prima, un'anteprima indicizzata resta nei risultati per settimane.",
+          : 'Il sito chiede ai motori di non indicizzare. Va portato NEXT_PUBLIC_ALLOW_INDEXING a "true" solo al lancio: prima, un\'anteprima indicizzata resta nei risultati per settimane.',
       done: process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true",
       blocking: false,
     },
@@ -198,8 +215,8 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
           : "Nessun ID configurato: gli script non vengono caricati e non viene installato nessun cookie di terze parti.",
       done: Boolean(
         process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ||
-          process.env.NEXT_PUBLIC_META_PIXEL_ID ||
-          process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID,
+        process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+        process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID,
       ),
       blocking: false,
     },
@@ -226,5 +243,9 @@ function pendingSocial(): string[] {
         return true; // Un indirizzo che non si riesce nemmeno a leggere è da sistemare.
       }
     })
-    .map(([platform]) => SOCIAL_LABELS[platform] ?? platform[0]!.toUpperCase() + platform.slice(1));
+    .map(
+      ([platform]) =>
+        SOCIAL_LABELS[platform] ??
+        platform[0]!.toUpperCase() + platform.slice(1),
+    );
 }

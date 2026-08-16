@@ -74,7 +74,9 @@ export function BuyBox({
         setQuantity(1);
         openCart();
       } else {
-        setError(result.message ?? "Non siamo riusciti ad aggiungerlo al carrello.");
+        setError(
+          result.message ?? "Non siamo riusciti ad aggiungerlo al carrello.",
+        );
       }
     });
   }
@@ -82,20 +84,27 @@ export function BuyBox({
   return (
     <div>
       <fieldset>
-        <legend className="eyebrow text-cacao-soft mb-3">Scegli il formato</legend>
+        <legend className="eyebrow text-cacao-soft mb-3">
+          Scegli il formato
+        </legend>
 
         <div className="grid gap-2.5">
           {variants.map((variant) => {
             const active = variant.id === selected.id;
             const unavailable = variant.stock <= 0;
-            const variantSaving = discountPercent(variant.priceCents, variant.compareAtCents);
+            const variantSaving = discountPercent(
+              variant.priceCents,
+              variant.compareAtCents,
+            );
 
             return (
               <label
                 key={variant.id}
                 className={cn(
                   "rounded-card flex cursor-pointer items-center gap-4 border-2 px-4 py-3.5 transition-colors",
-                  active ? "border-fiamma bg-fiamma-wash" : "border-cacao-line hover:border-cacao",
+                  active
+                    ? "border-fiamma bg-fiamma-wash"
+                    : "border-cacao-line hover:border-cacao",
                   unavailable && "opacity-55",
                   "focus-within:outline-fiamma focus-within:outline focus-within:outline-2 focus-within:outline-offset-2",
                 )}
@@ -120,21 +129,33 @@ export function BuyBox({
                     active ? "border-fiamma" : "border-cacao-line",
                   )}
                 >
-                  {active && <span className="bg-fiamma h-2.5 w-2.5 rounded-full" />}
+                  {active && (
+                    <span className="bg-fiamma h-2.5 w-2.5 rounded-full" />
+                  )}
                 </span>
 
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{variant.name}</span>
                     {variant.badge && !unavailable && (
-                      <Badge tone={active ? "brand" : "neutral"}>{variant.badge}</Badge>
+                      <Badge tone={active ? "brand" : "neutral"}>
+                        {variant.badge}
+                      </Badge>
                     )}
                     {unavailable && <Badge tone="outline">Esaurito</Badge>}
                   </span>
                   <span className="text-cacao-soft block text-sm">
                     {variant.boxCount * unitsPerBox} mini cookie
                     {variant.boxCount > 1 && (
-                      <> · {formatUnitPrice(variant.priceCents, variant.boxCount)} a confezione</>
+                      <>
+                        {" "}
+                        ·{" "}
+                        {formatUnitPrice(
+                          variant.priceCents,
+                          variant.boxCount,
+                        )}{" "}
+                        a confezione
+                      </>
                     )}
                   </span>
                 </span>
@@ -155,7 +176,11 @@ export function BuyBox({
         </div>
       </fieldset>
 
-      <div className="mt-6 flex items-baseline gap-3">
+      {/* `flex-wrap`: prezzo, prezzo barrato e pastiglia dello sconto su uno
+          schermo da 320px non stanno su una riga sola, e senza il ritorno a
+          capo la pastiglia usciva dallo schermo trascinandosi dietro la
+          pagina. */}
+      <div className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-2">
         <span className="font-display text-4xl font-extrabold tracking-tight tabular-nums">
           {formatPrice(selected.priceCents * quantity)}
         </span>
@@ -185,13 +210,20 @@ export function BuyBox({
           className="flex-1"
           aria-describedby={error ? "buybox-errore" : undefined}
         >
-          {soldOut ? "Esaurito" : pending ? "Aggiungo…" : "Aggiungi al carrello"}
+          {soldOut
+            ? "Esaurito"
+            : pending
+              ? "Aggiungo…"
+              : "Aggiungi al carrello"}
         </Button>
       </div>
 
       <p aria-live="polite" className="min-h-6">
         {error && (
-          <span id="buybox-errore" className="text-danger mt-3 inline-block text-sm font-semibold">
+          <span
+            id="buybox-errore"
+            className="text-danger mt-3 inline-block text-sm font-semibold"
+          >
             {error}
           </span>
         )}

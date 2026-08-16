@@ -25,6 +25,7 @@ const SECTIONS = [
       { href: "/admin/customers", label: "Clienti" },
       { href: "/admin/products", label: "Prodotti" },
       { href: "/admin/coupons", label: "Codici sconto" },
+      { href: "/admin/punti-vendita", label: "Punti vendita" },
     ],
   },
   {

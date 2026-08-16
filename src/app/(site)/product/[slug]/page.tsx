@@ -6,7 +6,11 @@ import { CookieShape } from "@/components/brand/CookieShape";
 import { PackShot } from "@/components/brand/PackShot";
 import { BuyBox } from "@/components/commerce/BuyBox";
 import { NutritionTable } from "@/components/commerce/NutritionTable";
-import { BreadcrumbJsonLd, FaqJsonLd, ProductJsonLd } from "@/components/seo/JsonLd";
+import {
+  BreadcrumbJsonLd,
+  FaqJsonLd,
+  ProductJsonLd,
+} from "@/components/seo/JsonLd";
 import { PageViewTracker } from "@/components/seo/PageViewTracker";
 import { FaqAccordion } from "@/components/marketing/FaqAccordion";
 import { SocialProof } from "@/components/marketing/SocialProof";
@@ -80,15 +84,21 @@ export default async function ProductPage({
       orderBy: [{ group: "asc" }, { sortOrder: "asc" }],
       take: 6,
     }),
-    db.shippingRate.findFirst({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    db.shippingRate.findFirst({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+    }),
     // Solo recensioni reali: vedi la nota in ProductJsonLd.
     getRatingSummary(product.id),
   ]);
 
   const recipeInProgress = product.ingredients.some((i) => !i.isConfirmed);
 
-  const cheapest = product.variants.reduce<(typeof product.variants)[number] | undefined>(
-    (best, variant) => (!best || variant.priceCents < best.priceCents ? variant : best),
+  const cheapest = product.variants.reduce<
+    (typeof product.variants)[number] | undefined
+  >(
+    (best, variant) =>
+      !best || variant.priceCents < best.priceCents ? variant : best,
     undefined,
   );
 
@@ -122,13 +132,19 @@ export default async function ProductPage({
           <nav aria-label="Percorso" className="text-cacao-soft mb-8 text-sm">
             <ol className="flex flex-wrap items-center gap-2">
               <li>
-                <Link href="/" className="hover:text-fiamma underline-offset-4 hover:underline">
+                <Link
+                  href="/"
+                  className="hover:text-fiamma underline-offset-4 hover:underline"
+                >
                   Home
                 </Link>
               </li>
               <li aria-hidden="true">/</li>
               <li>
-                <Link href="/shop" className="hover:text-fiamma underline-offset-4 hover:underline">
+                <Link
+                  href="/shop"
+                  className="hover:text-fiamma underline-offset-4 hover:underline"
+                >
                   Shop
                 </Link>
               </li>
@@ -142,31 +158,42 @@ export default async function ProductPage({
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
             {/* Galleria: il pack grande, i tre biscotti sotto. Sostituire questi
                 vettori con le fotografie è documentato in docs/PHOTO-BRIEF.md. */}
-            <div>
-              <div className="bg-crema rounded-card grain p-8 sm:p-12">
+            {/* `min-w-0`: una colonna di griglia, per impostazione predefinita,
+                non scende sotto la larghezza minima del suo contenuto. Su uno
+                schermo da 320px questo mandava fuori misura l'intera pagina.
+                Le colonne devono poter stringersi. */}
+            <div className="min-w-0">
+              <div className="bg-crema rounded-card grain p-6 sm:p-12">
                 <PackShot />
               </div>
 
-              <ul className="mt-4 grid grid-cols-3 gap-4">
+              <ul className="mt-4 grid grid-cols-3 gap-3 sm:gap-4">
                 {product.flavors.map((flavor) => (
                   <li
                     key={flavor.id}
-                    className="rounded-card flex flex-col items-center p-4"
+                    className="rounded-card flex flex-col items-center p-3 sm:p-4"
                     style={{ backgroundColor: flavor.washHex }}
                   >
                     {isShapeKey(flavor.shapeKey) && (
-                      <CookieShape shape={flavor.shapeKey} className="w-14" />
+                      <CookieShape
+                        shape={flavor.shapeKey}
+                        className="w-11 sm:w-14"
+                      />
                     )}
-                    <span className="mt-3 text-center text-xs font-bold">{flavor.name}</span>
+                    <span className="mt-3 text-center text-xs font-bold">
+                      {flavor.name}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <h1 className="text-display">{product.name}</h1>
               {product.subtitle && (
-                <p className="text-lead text-cacao-soft mt-3">{product.subtitle}</p>
+                <p className="text-lead text-cacao-soft mt-3">
+                  {product.subtitle}
+                </p>
               )}
 
               <div className="mt-6 flex flex-wrap gap-2">
@@ -177,7 +204,9 @@ export default async function ProductPage({
                 ))}
               </div>
 
-              <p className="text-cacao-soft mt-6 leading-relaxed">{product.description}</p>
+              <p className="text-cacao-soft mt-6 leading-relaxed">
+                {product.description}
+              </p>
 
               <div className="mt-8">
                 <BuyBox
@@ -201,15 +230,21 @@ export default async function ProductPage({
               {shippingRate && (
                 <dl className="border-cacao-line mt-8 space-y-2.5 border-t pt-6 text-sm">
                   <div className="flex gap-3">
-                    <dt className="text-cacao-soft w-28 shrink-0">Spedizione</dt>
+                    <dt className="text-cacao-soft w-28 shrink-0">
+                      Spedizione
+                    </dt>
                     <dd>
                       {shippingRate.name}
-                      {shippingRate.estimateDays && ` · ${shippingRate.estimateDays}`}
+                      {shippingRate.estimateDays &&
+                        ` · ${shippingRate.estimateDays}`}
                       {shippingRate.freeOverCents !== null && (
                         <>
                           {" "}
                           — gratuita sopra i{" "}
-                          {(shippingRate.freeOverCents / 100).toFixed(2).replace(".", ",")} €
+                          {(shippingRate.freeOverCents / 100)
+                            .toFixed(2)
+                            .replace(".", ",")}{" "}
+                          €
                         </>
                       )}
                     </dd>
@@ -246,7 +281,8 @@ export default async function ProductPage({
               {recipeInProgress && (
                 <p className="border-fiamma bg-fiamma-wash text-cacao mt-5 border-l-4 px-5 py-4 text-sm leading-relaxed font-medium">
                   Ricetta in sviluppo. Questa è la direzione di lavoro, non la
-                  formulazione definitiva: l&apos;elenco in etichetta potrà differire.
+                  formulazione definitiva: l&apos;elenco in etichetta potrà
+                  differire.
                 </p>
               )}
 
@@ -271,7 +307,10 @@ export default async function ProductPage({
               <Eyebrow>Valori</Eyebrow>
               <h3 className="text-title mt-3">Tabella nutrizionale</h3>
               <div className="mt-6">
-                <NutritionTable facts={product.nutrition} allergens={product.allergens} />
+                <NutritionTable
+                  facts={product.nutrition}
+                  allergens={product.allergens}
+                />
               </div>
             </div>
           </div>

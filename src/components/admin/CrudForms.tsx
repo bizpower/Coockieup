@@ -1,8 +1,19 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
-import { deleteFaq, resetSiteContent, saveFaq, saveSiteContent } from "@/app/actions/admin/content";
-import { deleteCoupon, saveCoupon, toggleCoupon } from "@/app/actions/admin/coupons";
+import {
+  deleteFaq,
+  deletePartner,
+  resetSiteContent,
+  saveFaq,
+  savePartner,
+  saveSiteContent,
+} from "@/app/actions/admin/content";
+import {
+  deleteCoupon,
+  saveCoupon,
+  toggleCoupon,
+} from "@/app/actions/admin/coupons";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +49,13 @@ function useSaver() {
   return { pending, run, feedback, result };
 }
 
-function Label({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
+function Label({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: ReactNode;
+}) {
   return (
     <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-semibold">
       {children}
@@ -79,7 +96,10 @@ export function ContentBlockEditor({
         onChange={(event) => setJson(event.target.value)}
         spellCheck={false}
         rows={Math.min(Math.max(lines, 4), 26)}
-        className={cn(inputClass, "h-auto py-3 font-mono text-xs leading-relaxed")}
+        className={cn(
+          inputClass,
+          "h-auto py-3 font-mono text-xs leading-relaxed",
+        )}
       />
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -163,8 +183,12 @@ export function FaqEditor({ items }: { items: FaqRow[] }) {
                       </span>
                     )}
                   </p>
-                  <p className="text-cacao-soft mt-1 line-clamp-2 text-sm">{item.answer}</p>
-                  <p className="text-cacao-soft mt-1 text-xs">Gruppo: {item.group}</p>
+                  <p className="text-cacao-soft mt-1 line-clamp-2 text-sm">
+                    {item.answer}
+                  </p>
+                  <p className="text-cacao-soft mt-1 text-xs">
+                    Gruppo: {item.group}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -364,7 +388,8 @@ export function CouponEditor({ coupons }: { coupons: CouponRow[] }) {
                   </p>
                   <p className="text-cacao-soft text-sm">
                     {coupon.type === "PERCENT" && `−${coupon.value}%`}
-                    {coupon.type === "FIXED" && `−${(coupon.value / 100).toFixed(2)} €`}
+                    {coupon.type === "FIXED" &&
+                      `−${(coupon.value / 100).toFixed(2)} €`}
                     {coupon.type === "FREE_SHIPPING" && "Spedizione gratuita"}
                     {coupon.minSubtotalCents > 0 &&
                       ` · da ${(coupon.minSubtotalCents / 100).toFixed(2)} €`}
@@ -476,7 +501,9 @@ function CouponFields({
         {type !== "FREE_SHIPPING" && (
           <div>
             <Label htmlFor={`value-${key}`}>
-              {type === "PERCENT" ? "Percentuale (1-100)" : "Sconto (centesimi)"}
+              {type === "PERCENT"
+                ? "Percentuale (1-100)"
+                : "Sconto (centesimi)"}
             </Label>
             <input
               id={`value-${key}`}
@@ -552,6 +579,237 @@ function CouponFields({
             type="button"
             onClick={onDelete}
             className="text-cacao-soft hover:text-danger ml-auto text-sm font-semibold"
+          >
+            Elimina
+          </button>
+        )}
+      </div>
+    </form>
+  );
+}
+
+// --- Punti vendita -----------------------------------------------------------
+
+export type PartnerRow = {
+  id: string;
+  name: string;
+  city: string;
+  address: string | null;
+  url: string | null;
+  note: string | null;
+  isConfirmed: boolean;
+  isPublished: boolean;
+};
+
+/**
+ * L'elenco dei negozi che rivendono i biscotti.
+ *
+ * Sulla lista si legge subito lo stato che conta: una scheda non confermata
+ * non compare in home, per quanto sia scritta bene. È la stessa disciplina dei
+ * dati di etichetta, applicata a dati che però appartengono a qualcun altro.
+ */
+export function PartnerEditor({ items }: { items: PartnerRow[] }) {
+  const { pending, run, feedback } = useSaver();
+  const [editing, setEditing] = useState<string | null>(null);
+
+  return (
+    <div>
+      <ul className="divide-cacao-line divide-y">
+        {items.map((item) => (
+          <li key={item.id} className="py-4">
+            {editing === item.id ? (
+              <PartnerFields
+                item={item}
+                pending={pending}
+                onSave={(formData) =>
+                  run(async () => {
+                    const result = await savePartner(item.id, formData);
+                    if (result.ok) setEditing(null);
+                    return result;
+                  })
+                }
+                onCancel={() => setEditing(null)}
+                onDelete={() => run(() => deletePartner(item.id))}
+              />
+            ) : (
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">
+                    {item.name}
+                    {!item.isConfirmed && (
+                      <span className="bg-energy-wash text-warning ml-2 rounded-full px-2 py-0.5 text-xs font-bold">
+                        da confermare
+                      </span>
+                    )}
+                    {!item.isPublished && (
+                      <span className="bg-crema text-cacao-soft ml-2 rounded-full px-2 py-0.5 text-xs font-bold">
+                        nascosto
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-cacao-soft mt-1 text-sm">
+                    {item.address
+                      ? `${item.address} · ${item.city}`
+                      : item.city}
+                  </p>
+                  {item.note && (
+                    <p className="text-cacao-soft mt-1 line-clamp-2 text-xs">
+                      {item.note}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditing(item.id)}
+                  className="text-cacao-soft hover:text-cacao text-sm font-semibold underline underline-offset-2"
+                >
+                  Modifica
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {editing === "new" ? (
+        <div className="border-cacao-line mt-4 border-t pt-4">
+          <PartnerFields
+            item={null}
+            pending={pending}
+            onSave={(formData) =>
+              run(async () => {
+                const result = await savePartner(null, formData);
+                if (result.ok) setEditing(null);
+                return result;
+              })
+            }
+            onCancel={() => setEditing(null)}
+          />
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-5"
+          onClick={() => setEditing("new")}
+        >
+          Aggiungi punto vendita
+        </Button>
+      )}
+
+      {feedback}
+    </div>
+  );
+}
+
+function PartnerFields({
+  item,
+  pending,
+  onSave,
+  onCancel,
+  onDelete,
+}: {
+  item: PartnerRow | null;
+  pending: boolean;
+  onSave: (formData: FormData) => void;
+  onCancel: () => void;
+  onDelete?: () => void;
+}) {
+  const key = item?.id ?? "new";
+
+  return (
+    <form action={onSave}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor={`name-${key}`}>Nome dell&apos;attività</Label>
+          <input
+            id={`name-${key}`}
+            name="name"
+            defaultValue={item?.name ?? ""}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`city-${key}`}>Città o zona</Label>
+          <input
+            id={`city-${key}`}
+            name="city"
+            defaultValue={item?.city ?? ""}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`address-${key}`}>Indirizzo (facoltativo)</Label>
+          <input
+            id={`address-${key}`}
+            name="address"
+            defaultValue={item?.address ?? ""}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`url-${key}`}>
+            Sito o pagina social (facoltativo)
+          </Label>
+          <input
+            id={`url-${key}`}
+            name="url"
+            type="url"
+            placeholder="https://"
+            defaultValue={item?.url ?? ""}
+            className={inputClass}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor={`note-${key}`}>Nota (facoltativa)</Label>
+          <textarea
+            id={`note-${key}`}
+            name="note"
+            rows={2}
+            defaultValue={item?.note ?? ""}
+            className={cn(inputClass, "h-auto py-3")}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-5">
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            name="isPublished"
+            defaultChecked={item?.isPublished ?? true}
+            className="accent-fiamma h-4 w-4"
+          />
+          Pubblicato
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            name="isConfirmed"
+            defaultChecked={item?.isConfirmed ?? false}
+            className="accent-success h-4 w-4"
+          />
+          Accordo confermato
+        </label>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <Button type="submit" variant="dark" size="sm" disabled={pending}>
+          {pending ? "Salvo…" : "Salva"}
+        </Button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-cacao-soft hover:text-cacao text-sm font-semibold"
+        >
+          Annulla
+        </button>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            className="text-danger ml-auto text-sm font-semibold hover:underline"
           >
             Elimina
           </button>
