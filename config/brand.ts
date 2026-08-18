@@ -36,6 +36,28 @@ export const BRAND_SOCIAL = {
 } as const;
 
 /**
+ * Solo i profili che esistono davvero.
+ *
+ * Finché un indirizzo è la home della piattaforma — `https://instagram.com/`,
+ * senza nome utente — non è il profilo di nessuno. Dichiararlo a Google come
+ * `sameAs` del brand significa affermare una cosa falsa su un'entità: nel
+ * migliore dei casi viene ignorato, nel peggiore confonde l'identità del
+ * brand con quella della piattaforma.
+ *
+ * Il riconoscimento è sul percorso vuoto, non su una lista di indirizzi da
+ * tenere aggiornata a ogni piattaforma che si aggiunge.
+ */
+export function profiliSocialReali(): string[] {
+  return Object.values(BRAND_SOCIAL).filter((indirizzo) => {
+    try {
+      return new URL(indirizzo).pathname.replace(/\/+$/, "") !== "";
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
  * Le tre forme "power-up". Sono la firma visiva del brand: compaiono come biscotti,
  * come bullet, come divisori e nei pattern di sfondo.
  *

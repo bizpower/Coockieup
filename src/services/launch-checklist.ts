@@ -205,6 +205,19 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       blocking: false,
     },
     {
+      // I motori generativi sono un canale d'ingresso, non un dettaglio
+      // tecnico: chi cerca "biscotti proteici italiani" spesso legge una
+      // risposta scritta da un modello con due o tre fonti citate.
+      id: "geo",
+      label: "Aprire il sito ai motori generativi",
+      detail:
+        process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true"
+          ? `I crawler che rispondono citando la fonte possono leggere il sito, e /llms.txt racconta loro cosa vendi e cosa non è ancora confermato. La raccolta per addestramento è ${process.env.ALLOW_AI_TRAINING === "true" ? "consentita" : "esclusa"}.`
+          : "Il sito è chiuso a tutti i crawler, generativi compresi: si apre insieme all'indicizzazione.",
+      done: process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true",
+      blocking: false,
+    },
+    {
       id: "analytics",
       label: "Collegare gli analytics",
       detail:

@@ -1,4 +1,9 @@
-import { BRAND_LEGAL, BRAND_NAME, BRAND_SOCIAL, BRAND_TAGLINE } from "@/config/brand";
+import {
+  BRAND_LEGAL,
+  BRAND_NAME,
+  BRAND_TAGLINE,
+  profiliSocialReali,
+} from "@/config/brand";
 import { CURRENCY, SITE_URL } from "@/config/site";
 
 /**
@@ -24,7 +29,17 @@ function JsonLd({ data }: { data: Record<string, unknown> }) {
   );
 }
 
+/**
+ * L'identità del brand, dichiarata una volta e richiamata ovunque per `@id`.
+ *
+ * È il pezzo che i motori generativi usano per capire *di chi* stanno
+ * parlando: senza un'entità chiara, un modello che incontra "CookieUp" in tre
+ * pagine diverse non ha modo di sapere che sono la stessa cosa, e la risposta
+ * che costruisce resta vaga o attribuisce il prodotto a qualcun altro.
+ */
 export function OrganizationJsonLd() {
+  const profili = profiliSocialReali();
+
   return (
     <JsonLd
       data={{
@@ -34,10 +49,18 @@ export function OrganizationJsonLd() {
             "@type": "Organization",
             "@id": `${SITE_URL}/#organization`,
             name: BRAND_NAME,
-            description: BRAND_TAGLINE,
+            alternateName: BRAND_TAGLINE,
+            description: `${BRAND_NAME} produce mini biscotti proteici italiani in tre gusti, con le forme dei power-up dei videogiochi: cuore, fulmine e ampolla.`,
+            slogan: BRAND_TAGLINE,
             url: SITE_URL,
+            logo: `${SITE_URL}/opengraph-image`,
+            image: `${SITE_URL}/opengraph-image`,
             email: BRAND_LEGAL.email,
-            sameAs: Object.values(BRAND_SOCIAL),
+            // Solo profili veri: un `sameAs` che punta alla home di Instagram
+            // è un'affermazione falsa sull'identità del brand.
+            ...(profili.length > 0 ? { sameAs: profili } : {}),
+            areaServed: { "@type": "Country", name: "Italia" },
+            knowsLanguage: "it",
           },
           {
             "@type": "WebSite",
@@ -48,6 +71,47 @@ export function OrganizationJsonLd() {
             publisher: { "@id": `${SITE_URL}/#organization` },
           },
         ],
+      }}
+    />
+  );
+}
+
+/**
+ * L'elenco dei formati in vendita, per lo shop.
+ *
+ * A una domanda come "quanto costa una confezione di CookieUp" un modello
+ * risponde meglio se i formati sono una lista dichiarata invece che tre
+ * riquadri da interpretare.
+ */
+export function ProductListJsonLd({
+  items,
+}: {
+  items: { name: string; slug: string; priceCents: number; sku: string }[];
+}) {
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: `Formati ${BRAND_NAME}`,
+        numberOfItems: items.length,
+        itemListElement: items.map((item, indice) => ({
+          "@type": "ListItem",
+          position: indice + 1,
+          item: {
+            "@type": "Product",
+            name: item.name,
+            sku: item.sku,
+            url: `${SITE_URL}/product/${item.slug}`,
+            brand: { "@id": `${SITE_URL}/#organization` },
+            offers: {
+              "@type": "Offer",
+              priceCurrency: CURRENCY.code,
+              price: (item.priceCents / 100).toFixed(2),
+              seller: { "@id": `${SITE_URL}/#organization` },
+            },
+          },
+        })),
       }}
     />
   );
@@ -137,7 +201,9 @@ export function ArticleJsonLd({
         mainEntityOfPage: `${SITE_URL}/magazine/${slug}`,
         ...(publishedAt ? { datePublished: publishedAt.toISOString() } : {}),
         dateModified: updatedAt.toISOString(),
-        ...(authorName ? { author: { "@type": "Person", name: authorName } } : {}),
+        ...(authorName
+          ? { author: { "@type": "Person", name: authorName } }
+          : {}),
         publisher: { "@id": `${SITE_URL}/#organization` },
         ...(imageUrl ? { image: [`${SITE_URL}${imageUrl}`] } : {}),
         inLanguage: "it-IT",
@@ -146,7 +212,11 @@ export function ArticleJsonLd({
   );
 }
 
-export function BreadcrumbJsonLd({ items }: { items: { name: string; path: string }[] }) {
+export function BreadcrumbJsonLd({
+  items,
+}: {
+  items: { name: string; path: string }[];
+}) {
   return (
     <JsonLd
       data={{

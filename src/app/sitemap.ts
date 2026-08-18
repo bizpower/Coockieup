@@ -22,11 +22,18 @@ export const revalidate = 3600;
 const STATIC_PAGES: MetadataRoute.Sitemap = [
   { url: SITE_URL, changeFrequency: "weekly", priority: 1 },
   { url: `${SITE_URL}/shop`, changeFrequency: "weekly", priority: 0.9 },
-  { url: `${SITE_URL}/il-nostro-biscotto`, changeFrequency: "monthly", priority: 0.7 },
+  {
+    url: `${SITE_URL}/il-nostro-biscotto`,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  },
   { url: `${SITE_URL}/ingredienti`, changeFrequency: "monthly", priority: 0.7 },
   { url: `${SITE_URL}/magazine`, changeFrequency: "daily", priority: 0.8 },
   { url: `${SITE_URL}/faq`, changeFrequency: "monthly", priority: 0.6 },
   { url: `${SITE_URL}/contatti`, changeFrequency: "yearly", priority: 0.4 },
+  // Non è una pagina da leggere, ma è il file che i motori generativi cercano
+  // per capire il sito: nella sitemap si fanno trovare prima.
+  { url: `${SITE_URL}/llms.txt`, changeFrequency: "weekly", priority: 0.3 },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

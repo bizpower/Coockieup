@@ -232,6 +232,40 @@ libreria, quindi non dipende da come si comporta.
 
 ---
 
+## GEO — farsi citare dalle risposte AI
+
+Chi cerca "biscotti proteici italiani" sempre più spesso non scorre dieci
+risultati: legge una risposta scritta da un modello che cita due o tre fonti.
+Restare fuori da quelle fonti significa non esistere in quel canale, anche
+stando primi su Google.
+
+**`/llms.txt`** è il file che i motori generativi cercano per capire un sito.
+Viene generato dal database a ogni richiesta e contiene prodotto, formati,
+prezzi reali, punti vendita, FAQ **confermate** e l'elenco degli articoli.
+
+La parte che conta di più però è un'altra, ed è dichiarata in cima: **cosa non
+è ancora vero**. Un modello non vede il badge arancione "DA CONFERMARE"
+accanto a un numero — vede il numero. Il file gli dice esplicitamente che
+valori nutrizionali, ingredienti e allergeni sono obiettivi di formulazione, e
+che alla domanda "quante proteine hanno" la risposta corretta è *non è ancora
+stato validato*. Un claim alimentare falso attribuito al brand da ChatGPT non
+si corregge modificando il sito: quella risposta è già stata data.
+
+**`robots.txt`** distingue due mestieri diversi:
+
+| Chi | Cosa fa | Regola |
+|---|---|---|
+| OAI-SearchBot, PerplexityBot, Claude-SearchBot, ChatGPT-User… | Leggono per rispondere **adesso**, citando la fonte | Ammessi |
+| GPTBot, ClaudeBot, Google-Extended, CCBot… | Raccolgono per **addestrare**: nessun link di ritorno | Esclusi, salvo `ALLOW_AI_TRAINING="true"` |
+
+**Dati strutturati.** L'entità `Organization` è dichiarata una volta e
+richiamata ovunque per `@id`, così un modello che incontra "CookieUp" in tre
+pagine capisce che è la stessa cosa. Lo shop espone un `ItemList` con i tre
+formati e i prezzi. Tutto il resto — `Product`, `Article`, `FAQPage`,
+`BreadcrumbList` — era già a posto.
+
+---
+
 ## Analytics
 
 GA4, Meta Pixel e TikTok Pixel sono predisposti in

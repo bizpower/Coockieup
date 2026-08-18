@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BundleTeaser } from "@/components/marketing/BundleTeaser";
 import { ProductCard } from "@/components/commerce/ProductCard";
+import { ProductListJsonLd } from "@/components/seo/JsonLd";
 import { Container, Eyebrow, Section } from "@/components/ui/Layout";
 import { db } from "@/lib/db";
 
@@ -31,20 +32,34 @@ export default async function ShopPage() {
 
   return (
     <>
+      {hero && hero.variants.length > 0 && (
+        <ProductListJsonLd
+          items={hero.variants.map((variante) => ({
+            name: `${hero.name} — ${variante.name}`,
+            slug: hero.slug,
+            priceCents: variante.priceCents,
+            sku: variante.sku,
+          }))}
+        />
+      )}
+
       <Section className="pb-0 sm:pb-0 lg:pb-0">
         <Container>
           <Eyebrow>Shop</Eyebrow>
           <h1 className="text-display mt-4 max-w-3xl">
-            Tutto quello che c&apos;è. Che per ora è una cosa sola, ma fatta bene.
+            Tutto quello che c&apos;è. Che per ora è una cosa sola, ma fatta
+            bene.
           </h1>
           <p className="text-lead text-cacao-soft mt-5 max-w-2xl">
-            Un box da 15 mini cookie con tutti e tre i gusti dentro. La differenza tra i
-            formati è quanti ne tieni in casa.
+            Un box da 15 mini cookie con tutti e tre i gusti dentro. La
+            differenza tra i formati è quanti ne tieni in casa.
           </p>
         </Container>
       </Section>
 
-      {hero && <BundleTeaser variants={hero.variants} productSlug={hero.slug} />}
+      {hero && (
+        <BundleTeaser variants={hero.variants} productSlug={hero.slug} />
+      )}
 
       {products.length > 1 && (
         <Section tone="crema" aria-labelledby="catalogo-titolo">
